@@ -7,7 +7,7 @@ import {
 import { DatePicker } from '@mui/x-date-pickers';
 import dayjs, { Dayjs } from 'dayjs';
 import { 
-  ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
+  ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
 import type { TooltipProps } from 'recharts';
 
@@ -15,6 +15,7 @@ interface EventData {
   id: string;
   title: string;
   description?: string;
+  due_date?: string;
   event_key: string;
 }
 
@@ -79,9 +80,40 @@ export default function EventPage() {
 
   const handleSubmit = async () => {
     if (!event) return;
+    
+    // Validation
+    if (!guessDate) return;
+    const w = parseFloat(weight);
+
+    // Weight check
+    if (isNaN(w) || w <= 1 || w >= 10) {
+      alert("Weight must be between 1kg and 10kg! ⚖️");
+      return;
+    }
+    
+    // Chonker check
+    if (w > 5) {
+      if (!window.confirm("That's a chonker! Are you sure? 🐘")) return;
+    }
+
+    // Past date check (allow today)
+    if (guessDate.isBefore(dayjs(), 'day')) {
+      alert("Can't wager a date in the past! 🕰️");
+      return;
+    }
+
+    // Max 1 month from due date
+    if (event.due_date) {
+      const maxDate = dayjs(event.due_date).add(1, 'month');
+      if (guessDate.isAfter(maxDate)) {
+        alert("Date can't be more than 1 month after due date! 📅");
+        return;
+      }
+    }
+
     try {
       // Append dummy time for backend compatibility
-      const formattedDate = guessDate ? guessDate.format('YYYY-MM-DD') + 'T12:00:00' : null;
+      const formattedDate = guessDate.format('YYYY-MM-DD') + 'T12:00:00';
 
       await fetch(`/api/events/${event.id}/guesses`, {
         method: 'POST',
@@ -89,7 +121,7 @@ export default function EventPage() {
         body: JSON.stringify({
           display_name: name,
           guessed_date: formattedDate,
-          guessed_weight_kg: parseFloat(weight),
+          guessed_weight_kg: w,
           color_hex: color
         })
       });
@@ -106,6 +138,7 @@ export default function EventPage() {
   const chartData = guesses.map(g => ({
     x: new Date(g.guessed_date).getTime(),
     y: g.guessed_weight_kg,
+    z: g.guessed_weight_kg, // for bubble size
     name: g.display_name,
     color: g.color_hex
   }));
@@ -164,7 +197,8 @@ export default function EventPage() {
                     domain={['auto', 'auto']}
                     tickFormatter={(unixTime) => new Date(unixTime).toLocaleDateString()}
                   />
-                  <YAxis type="number" dataKey="y" name="Weight" unit="kg" />
+                  <YAxis type="number" dataKey="y" name="Weight" unit="kg" domain={[0, 12]} />
+                  <ZAxis type="number" dataKey="z" range={[50, 400]} name="Weight Size" />
                   <Tooltip content={<CustomTooltip />} />
                   <Scatter name="Guesses" data={chartData} fill="#8884d8">
                     {chartData.map((entry, index) => (
@@ -175,6 +209,7 @@ export default function EventPage() {
               </ResponsiveContainer>
             </Paper>
           </Grid>
+
 
           {/* Sidebar */}
           <Grid item xs={12} lg={4}>
