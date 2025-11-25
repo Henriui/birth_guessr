@@ -1,113 +1,79 @@
-# baby_birth_guessr
+# Baby Birth Guessr 👶
 
-A small Rust/Axum backend for running a baby birth guessing game:
+A real-time baby birth guessing game! Hosts create an event, and friends can guess the birth date and weight. Updates appear instantly for everyone connected.
 
-- Hosts create an event for an upcoming birth.
-- Invitees can submit guesses for birth date and baby weight.
-- The app stores data in PostgreSQL using Diesel ORM.
+## Features
 
-This README explains how to get the project running after cloning the repo.
-
----
+*   **Create Events:** Hosts can create a betting event with a title, description, and expected due date.
+*   **Real-time Dashboard:** Watch guesses pour in live via Server-Sent Events (SSE).
+*   **Visualizations:** Scatter plot of guesses (Date vs. Weight) using Recharts.
+*   **Modern Stack:**
+    *   **Backend:** Rust (Axum), Diesel (Postgres), Tokio (SSE/Broadcast).
+    *   **Frontend:** React 19 (Vite), TypeScript, MUI, Recharts.
 
 ## Prerequisites
 
-- **Rust** (via [rustup](https://rustup.rs/))
-- **PostgreSQL** 13+ with command-line tools `psql` and `createdb`
-- **Diesel CLI** with Postgres support (optional but recommended for managing migrations)
-- A shell environment that can run `bash` scripts if you want to use `run.sh` (e.g. WSL, Git Bash, or a Unix-like shell)
+*   **Rust** (stable)
+*   **Node.js** (v18+)
+*   **PostgreSQL**
 
----
+## Getting Started
 
-## 1. Clone the repository
+### 1. Database Setup
 
-```bash
-git clone <YOUR_FORK_OR_ORIGIN_URL>
-cd baby_birth_guessr
-```
-
----
-
-## 2. Configure the database
-
-Set a `DATABASE_URL` for your Postgres instance. A common pattern is:
+Ensure PostgreSQL is running and set your `DATABASE_URL` in a `.env` file or environment:
 
 ```bash
-export DATABASE_URL=postgres://<user>:<password>@localhost:5432/baby_birth_guessr
+cp .env.example .env
+# Edit .env with your postgres credentials
 ```
 
-If you **do not** set `DATABASE_URL`, the `run.sh` script will fall back to:
-
-```text
-postgres://postgres:postgres@localhost:5432/baby_birth_guessr
-```
-
-Make sure that user/password/host/port correspond to a real Postgres installation.
-
-### Diesel CLI (optional but recommended)
-
-Install Diesel CLI with Postgres support (requires Postgres client libraries):
+Run migrations:
 
 ```bash
 cargo install diesel_cli --no-default-features --features postgres
-```
-
-If this fails with a `libpq` error, ensure your Postgres development libraries are installed and visible on your system, then re-run the command.
-
-Once the CLI is installed, you can run:
-
-```bash
 diesel setup
+diesel migration run
 ```
 
-This will create a `diesel.toml` and an initial `migrations/` folder (if not already present), and connect to the database specified by `DATABASE_URL`.
+### 2. Backend
 
----
-
-## 3. Running the application
-
-### Using the helper script (recommended)
-
-The project includes a small helper script `run.sh` that:
-
-- Ensures a database exists for the configured `DATABASE_URL` (creates it if necessary).
-- Prints a placeholder for running migrations (you can later plug in your `diesel migration run` command here).
-- Starts the Axum server with `cargo run`.
-
-From the project root:
-
-```bash
-chmod +x run.sh   # only needed once
-./run.sh
-```
-
-### Running manually
-
-You can also manage the DB yourself and just run the server directly:
-
-1. Ensure the database from `DATABASE_URL` exists.
-2. Run migrations (e.g. `diesel migration run`).
-3. Start the server:
+The backend serves the API and facilitates real-time updates.
 
 ```bash
 cargo run
 ```
 
-The server will listen by default on:
+Server listens on `http://127.0.0.1:3000`.
 
-- `http://127.0.0.1:3000/` – basic root endpoint.
-- `http://127.0.0.1:3000/health` – simple health check endpoint.
+### 3. Frontend
 
----
+The frontend is a React SPA located in `frontend/`.
 
-## 4. Development notes
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-- The backend uses **Axum** and **Tokio** for async HTTP handling.
-- **Diesel** is used for talking to PostgreSQL (models, queries, migrations).
-- Logging is done with `tracing` / `tracing-subscriber`.
+Open `http://localhost:5173` in your browser.
 
-As the project evolves, this README should be updated with:
+> **Note:** The Vite dev server proxies `/api` requests to the Rust backend at port 3000.
 
-- Details of the API endpoints (event creation, guesses, etc.).
-- Database schema details (events, invitees, guesses tables).
-- Any additional setup required for the frontend or deployment.
+## Architecture
+
+### API Endpoints
+
+*   `POST /api/events`: Create a new event.
+*   `GET /api/events/by-key/{key}`: Retrieve event details by invite key.
+*   `POST /api/events/{id}/guesses`: Submit a new guess.
+*   `GET /api/events/{id}/guesses`: List all guesses for an event.
+*   `GET /api/events/{id}/live`: **SSE** endpoint for real-time updates.
+
+### Real-time Updates
+
+The backend uses a `tokio::sync::broadcast` channel to publish new guesses. When a user submits a guess, it is saved to the DB and then broadcasted to all clients listening on the SSE endpoint for that specific event.
+
+## License
+
+MIT
