@@ -1,7 +1,7 @@
 # Baby Birth Guessr 👶
 
 A real-time baby birth guessing game! Hosts create an event, and friends can guess the birth date and weight. Updates appear instantly for everyone connected.
-
+![alt text](image.png)
 ## Features
 
 *   **Create Events:** Hosts can create a betting event with a title, description, and expected due date.
