@@ -26,4 +26,5 @@ export interface ChartPoint {
   z: number;
   name: string;
   color: string;
+  subPoints?: { name: string; color: string }[];
 }

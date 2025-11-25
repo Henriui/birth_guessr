@@ -87,13 +87,35 @@ export default function EventPage() {
   }, [guesses]);
 
   // Chart Data Preparation
-  const chartData: ChartPoint[] = uniqueGuesses.map((g) => ({
-    x: new Date(g.guessed_date).getTime(),
-    y: g.guessed_weight_kg,
-    z: g.guessed_weight_kg, // for bubble size
-    name: g.display_name,
-    color: g.color_hex,
-  }));
+  const chartData: ChartPoint[] = useMemo(() => {
+    const groups = new Map<
+      string,
+      { x: number; y: number; subPoints: { name: string; color: string }[] }
+    >();
+
+    uniqueGuesses.forEach((g) => {
+      const x = new Date(g.guessed_date).getTime();
+      const y = g.guessed_weight_kg;
+      const key = `${x}-${y}`;
+
+      if (!groups.has(key)) {
+        groups.set(key, { x, y, subPoints: [] });
+      }
+      groups.get(key)!.subPoints.push({
+        name: g.display_name,
+        color: g.color_hex,
+      });
+    });
+
+    return Array.from(groups.values()).map((grp) => ({
+      x: grp.x,
+      y: grp.y,
+      z: grp.y, // for bubble size
+      name: grp.subPoints.map((s) => s.name).join(', '),
+      color: grp.subPoints[0].color,
+      subPoints: grp.subPoints,
+    }));
+  }, [uniqueGuesses]);
 
   if (!event) return <Typography p={4}>Loading...</Typography>;
 
