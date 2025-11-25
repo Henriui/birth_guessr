@@ -10,3 +10,29 @@ diesel::table! {
         created_at -> Timestamp,
     }
 }
+
+diesel::table! {
+    guesses (id) {
+        id -> Uuid,
+        invitee_id -> Uuid,
+        guessed_date -> Timestamp,
+        guessed_weight_kg -> Float8,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    invitees (id) {
+        id -> Uuid,
+        event_id -> Uuid,
+        display_name -> Varchar,
+        created_at -> Timestamp,
+        #[max_length = 7]
+        color_hex -> Varchar,
+    }
+}
+
+diesel::joinable!(guesses -> invitees (invitee_id));
+diesel::joinable!(invitees -> events (event_id));
+
+diesel::allow_tables_to_appear_in_same_query!(events, guesses, invitees,);

@@ -1,33 +1,34 @@
 use axum::{
     Router,
-    extract::{Json, State},
     routing::{get, post},
     serve,
 };
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
-use rand::{Rng, distributions::Alphanumeric};
-use serde::Deserialize;
 use std::env;
 use tokio::net::TcpListener;
+use tokio::sync::broadcast;
+use tower_http::services::ServeDir;
 use tracing_subscriber::EnvFilter;
 
 use tracing;
 
+mod handlers;
 mod models;
 mod schema;
+mod types;
+mod utils;
 
-use models::{Event, NewEvent};
-
-type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
-
-#[derive(Clone)]
-struct AppState {
-    pool: DbPool,
-}
+use handlers::{
+    create_event, get_event_by_key, get_event_guesses, health, sse_subscribe, submit_guess,
+};
+use types::AppState;
 
 #[tokio::main]
 async fn main() {
+    // load env variables from .env file
+    dotenvy::dotenv().ok();
+
     // init logging
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
@@ -39,13 +40,21 @@ async fn main() {
         .build(manager)
         .expect("Failed to create pool.");
 
-    let state = AppState { pool };
+    let (tx, _rx) = broadcast::channel(100);
+
+    let state = AppState { pool, tx };
 
     // define routes
     let app = Router::new()
-        .route("/", get(root))
-        .route("/health", get(health))
-        .route("/events", post(create_event))
+        .route("/api/health", get(health))
+        .route("/api/events", post(create_event))
+        .route("/api/events/by-key/{key}", get(get_event_by_key))
+        .route(
+            "/api/events/{id}/guesses",
+            post(submit_guess).get(get_event_guesses),
+        )
+        .route("/api/events/{id}/live", get(sse_subscribe))
+        .fallback_service(ServeDir::new("public"))
         .with_state(state);
 
     // run server
@@ -53,53 +62,4 @@ async fn main() {
     let listener = TcpListener::bind(addr).await.unwrap();
     tracing::info!("Listening on http://{}", addr);
     serve(listener, app).await.unwrap();
-}
-
-async fn root() -> &'static str {
-    "baby_birth_guessr backend is running"
-}
-
-async fn health() -> &'static str {
-    "ok"
-}
-
-#[derive(Deserialize)]
-struct CreateEventRequest {
-    title: String,
-    description: Option<String>,
-    due_date: Option<chrono::NaiveDateTime>,
-}
-
-async fn create_event(
-    State(state): State<AppState>,
-    Json(payload): Json<CreateEventRequest>,
-) -> Json<Event> {
-    use schema::events;
-
-    // Generate a random key
-    let event_key: String = rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(8)
-        .map(char::from)
-        .collect();
-
-    let new_event = NewEvent {
-        title: &payload.title,
-        description: payload.description.as_deref(),
-        due_date: payload.due_date,
-        event_key: &event_key,
-    };
-
-    let mut conn = state
-        .pool
-        .get()
-        .expect("couldn't get db connection from pool");
-
-    let event = diesel::insert_into(events::table)
-        .values(&new_event)
-        .returning(Event::as_returning())
-        .get_result(&mut conn)
-        .expect("Error saving new event");
-
-    Json(event)
 }
