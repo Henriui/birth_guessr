@@ -90,6 +90,15 @@ This method runs the database and application in a single Pod, sharing the netwo
 ./podman-deploy.sh
 ```
 
+**Features included:**
+*   **SSL/HTTPS:** Includes a Caddy sidecar on port 443 (Self-signed).
+*   **DDNS:** Updates Cloudflare DNS automatically (if configured).
+
+**Production Setup:**
+1.  **Router:** Forward External Port **443** -> Internal Port **8443** (Port 443 is privileged, so we use 8443 locally).
+2.  **Cloudflare:** Set SSL/TLS mode to **Full** (allows self-signed certs).
+
+
 ### Option 2: Podman Compose
 
 If you prefer the Compose workflow:

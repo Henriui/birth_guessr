@@ -1,0 +1,5 @@
+birthguessr.henriui.dev, localhost {
+    reverse_proxy localhost:3000
+    tls internal
+}
+
