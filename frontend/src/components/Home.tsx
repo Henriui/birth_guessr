@@ -96,7 +96,7 @@ export default function Home() {
             variant="contained" 
             size="large" 
             onClick={handleCreate}
-            disabled={!title || !turnstileToken}
+            disabled={!title || !turnstileToken || !dueDate}
             sx={{ py: 1.5 }}
           >
             {t('home.button_create')}

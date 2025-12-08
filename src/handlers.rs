@@ -61,6 +61,10 @@ pub async fn create_event(
         return Err(StatusCode::BAD_REQUEST);
     }
 
+    if payload.due_date.is_none() {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
     let event_key = generate_event_key();
 
     let new_event = NewEvent {
