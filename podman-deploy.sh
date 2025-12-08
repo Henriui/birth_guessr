@@ -9,8 +9,17 @@ fi
 
 # Load environment variables from .env if present
 if [ -f .env ]; then
-    export $(cat .env | xargs)
+    set -a
+    source .env
+    set +a
 fi
+
+if [ -z "$POSTGRES_USER" ] || [ -z "$POSTGRES_PASSWORD" ] || [ -z "$POSTGRES_DB" ]; then
+    echo "Error: POSTGRES_USER, POSTGRES_PASSWORD, or POSTGRES_DB not set in .env"
+    exit 1
+fi
+
+echo "Using Postgres User: $POSTGRES_USER"
 
 # Create a pod with port mapping
 # This exposes port 3000 (HTTP) and 8443 (HTTPS) from the pod to the host
@@ -36,9 +45,7 @@ fi
 # Note: We use a named volume for persistence
 echo "Starting Database..."
 podman run -d --name birth_guessr_db --pod birth_guessr_pod \
-    -e POSTGRES_USER=postgres \
-    -e POSTGRES_PASSWORD=postgres \
-    -e POSTGRES_DB=birth_guessr \
+    --env-file .env \
     -v birth_guessr_data:/var/lib/postgresql/data \
     --tls-verify=false \
     docker.io/library/postgres:15-alpine
@@ -49,7 +56,9 @@ sleep 5
 
 # Build the app
 echo "Building Application..."
-podman build --tls-verify=false -t birth_guessr_app .
+podman build --tls-verify=false \
+    --build-arg VITE_TURNSTILE_SITE_KEY=$VITE_TURNSTILE_SITE_KEY \
+    -t birth_guessr_app .
 
 # Run Caddy Sidecar for SSL
 echo "Starting Caddy Proxy..."
@@ -59,9 +68,13 @@ podman run -d --name birth_guessr_proxy --pod birth_guessr_pod \
 
 # Run App in the pod
 # IMPORTANT: DATABASE_URL uses 'localhost' because containers in a pod share the network namespace
+# We explicitly construct DATABASE_URL to ensure it has the correct credentials, overriding .env if needed
 echo "Starting Application..."
+APP_DB_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/${POSTGRES_DB}"
+
 podman run -d --name birth_guessr_app --pod birth_guessr_pod \
-    -e DATABASE_URL=postgres://postgres:postgres@localhost:5432/birth_guessr \
+    --env-file .env \
+    -e DATABASE_URL=$APP_DB_URL \
     -e RUST_LOG=info \
     birth_guessr_app
 

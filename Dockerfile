@@ -1,5 +1,7 @@
 # Stage 1: Build Frontend
 FROM docker.io/library/node:25-slim AS frontend_builder
+ARG VITE_TURNSTILE_SITE_KEY
+ENV VITE_TURNSTILE_SITE_KEY=$VITE_TURNSTILE_SITE_KEY
 WORKDIR /app/frontend
 COPY frontend/package.json ./
 RUN npm config set strict-ssl false

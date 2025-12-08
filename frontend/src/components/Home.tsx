@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Box, Button, Paper, TextField, Typography, Stack, Container } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { Dayjs } from 'dayjs';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ export default function Home() {
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState<Dayjs | null>(null);
   const [joinKey, setJoinKey] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
 
   const handleCreate = async () => {
     try {
@@ -25,7 +27,8 @@ export default function Home() {
         body: JSON.stringify({
           title,
           description: description || null,
-          due_date: formattedDate
+          due_date: formattedDate,
+          turnstile_token: turnstileToken
         })
       });
       
@@ -79,12 +82,19 @@ export default function Home() {
             onChange={(newValue) => setDueDate(newValue)}
             slotProps={{ textField: { fullWidth: true } }}
           />
+
+          <Box display="flex" justifyContent="center">
+            <Turnstile
+              siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || ""}
+              onSuccess={(token) => setTurnstileToken(token)}
+            />
+          </Box>
           
           <Button 
             variant="contained" 
             size="large" 
             onClick={handleCreate}
-            disabled={!title}
+            disabled={!title || !turnstileToken}
             sx={{ py: 1.5 }}
           >
             Create Event

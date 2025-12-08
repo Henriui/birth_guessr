@@ -28,12 +28,39 @@ pub struct CreateEventRequest {
     pub title: String,
     pub description: Option<String>,
     pub due_date: Option<chrono::NaiveDateTime>,
+    pub turnstile_token: String,
+}
+
+#[derive(Deserialize)]
+struct TurnstileVerifyResponse {
+    success: bool,
 }
 
 pub async fn create_event(
     State(state): State<AppState>,
     Json(payload): Json<CreateEventRequest>,
-) -> Json<Event> {
+) -> Result<Json<Event>, StatusCode> {
+    // Verify Turnstile Token
+    let secret = std::env::var("TURNSTILE_SECRET_KEY").map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    
+    let client = reqwest::Client::new();
+    let verify_result = client
+        .post("https://challenges.cloudflare.com/turnstile/v0/siteverify")
+        .form(&[
+            ("secret", secret),
+            ("response", payload.turnstile_token.clone()),
+        ])
+        .send()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .json::<TurnstileVerifyResponse>()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    if !verify_result.success {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
     let event_key = generate_event_key();
 
     let new_event = NewEvent {
@@ -54,7 +81,7 @@ pub async fn create_event(
         .get_result(&mut conn)
         .expect("Error saving new event");
 
-    Json(event)
+    Ok(Json(event))
 }
 
 pub async fn get_event_guesses(
