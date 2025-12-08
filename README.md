@@ -74,6 +74,43 @@ Open `http://localhost:5173` in your browser.
 
 The backend uses a `tokio::sync::broadcast` channel to publish new guesses. When a user submits a guess, it is saved to the DB and then broadcasted to all clients listening on the SSE endpoint for that specific event.
 
+## Podman Deployment (Recommended)
+
+We recommend using **Podman** for deployment, especially on Windows, as it offers better control through the concept of **Pods**.
+
+### Option 1: Native Pods (Best for control)
+
+This method runs the database and application in a single Pod, sharing the network namespace (improving performance and simplifying networking).
+
+1.  Ensure you have **Podman** installed.
+2.  Run the provided script:
+
+**Bash (Git Bash/WSL):**
+```bash
+./podman-deploy.sh
+```
+
+### Option 2: Podman Compose
+
+If you prefer the Compose workflow:
+
+1.  Ensure you have `podman-compose` installed.
+2.  Run:
+
+```bash
+podman-compose up --build
+```
+
+(Or `docker-compose up --build` if using Docker).
+
+The application will be available at `http://localhost:3000`.
+
+The setup:
+-   **Stage 1:** Builds React frontend.
+-   **Stage 2:** Builds Rust backend.
+-   **Stage 3:** Runtime image (Debian).
+-   **Database:** Postgres 15 (auto-migrated on startup).
+
 ## License
 
 MIT

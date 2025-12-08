@@ -10,6 +10,7 @@ use axum::{
 };
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
+use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 use std::env;
 use tokio::net::TcpListener;
 use tokio::sync::broadcast;
@@ -29,6 +30,8 @@ use handlers::{
 };
 use types::AppState;
 
+pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
+
 #[tokio::main]
 async fn main() {
     // load env variables from .env file
@@ -44,6 +47,12 @@ async fn main() {
     let pool = r2d2::Pool::builder()
         .build(manager)
         .expect("Failed to create pool.");
+
+    {
+        let mut conn = pool.get().expect("Failed to get connection for migrations");
+        conn.run_pending_migrations(MIGRATIONS)
+            .expect("Failed to run migrations");
+    }
 
     let (tx, _rx) = broadcast::channel(100);
 
@@ -63,8 +72,10 @@ async fn main() {
         .with_state(state);
 
     // run server
-    let addr = "127.0.0.1:3000";
-    let listener = TcpListener::bind(addr).await.unwrap();
+    let host = env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
+    let port = env::var("PORT").unwrap_or_else(|_| "3000".to_string());
+    let addr = format!("{}:{}", host, port);
+    let listener = TcpListener::bind(&addr).await.unwrap();
     tracing::info!("Listening on http://{}", addr);
     serve(listener, app).await.unwrap();
 }
