@@ -1,0 +1,41 @@
+{
+  "home": {
+    "title": "Vauva-Veikkaaja 👶",
+    "subtitle": "Luo tapahtuma ja kutsu kaverit arvailemaan!",
+    "field_title": "Tapahtuman Nimi",
+    "field_description": "Kuvaus (Valinnainen)",
+    "field_due_date": "Laskettu Aika",
+    "placeholder_title": "esim. Vauva Virtanen",
+    "button_create": "Luo Tapahtuma",
+    "join_text": "Onko sinulla kutsukoodi?",
+    "button_join": "Liity",
+    "alert_create_fail": "Tapahtuman luonti epäonnistui",
+    "alert_create_error": "Virhe tapahtuman luonnissa"
+  },
+  "event_header": {
+    "invite_key": "Kutsukoodi"
+  },
+  "guess_form": {
+    "title": "Tee Arvaus 🎲",
+    "field_name": "Nimesi",
+    "field_date": "Päivämäärä",
+    "field_weight": "Paino (kg)",
+    "field_color": "Väri",
+    "button_submit": "Lähetä Arvaus",
+    "alert_weight_range": "Painon täytyy olla 1kg ja 10kg välillä! ⚖️",
+    "alert_chonker": "Melkoinen jötkäle! Oletko varma? 🐘",
+    "alert_past_date": "Et voi veikata mennyttä päivämäärää! 🕰️",
+    "alert_date_limit": "Päivämäärä ei voi olla yli kuukautta lasketun ajan jälkeen! 📅",
+    "alert_submit_fail": "Arvauksen lähetys epäonnistui"
+  },
+  "guess_list": {
+    "title": "Viimeisimmät Arvaukset",
+    "guess_summary": "{{weight}}kg - {{date}}"
+  },
+  "event_page": {
+    "loading": "Ladataan...",
+    "chart_title": "Arvauskäyrä 📊",
+    "alert_load_fail": "Tapahtumaa ei voitu ladata",
+    "error_not_found": "Tapahtumaa ei löytynyt"
+  }
+}

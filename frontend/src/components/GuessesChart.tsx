@@ -77,7 +77,7 @@ const AnimatedPoint = (props: {
   }, [subPoints]);
 
   const currentColor =
-    subPoints && subPoints.length > 1 ? subPoints[colorIndex].color : fill;
+    subPoints && subPoints.length > 1 ? subPoints[colorIndex].color : chartPoint?.color || fill;
 
   // Calculate radius from area (size) if available, otherwise default to 6
   const radius = size ? Math.sqrt(size / Math.PI) : 6;

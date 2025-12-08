@@ -3,12 +3,14 @@ import { Box, Button, Card, CardContent, Stack, TextField, Typography } from '@m
 import { DatePicker } from '@mui/x-date-pickers';
 import dayjs, { Dayjs } from 'dayjs';
 import type { EventData } from './types';
+import { useTranslation } from 'react-i18next';
 
 interface GuessFormProps {
   event: EventData;
 }
 
 export function GuessForm({ event }: GuessFormProps) {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [weight, setWeight] = useState('');
   const [guessDate, setGuessDate] = useState<Dayjs | null>(null);
@@ -21,23 +23,23 @@ export function GuessForm({ event }: GuessFormProps) {
     const w = parseFloat(weight);
 
     if (isNaN(w) || w <= 1 || w >= 10) {
-      alert('Weight must be between 1kg and 10kg! ⚖️');
+      alert(t('guess_form.alert_weight_range'));
       return;
     }
 
     if (w > 5) {
-      if (!window.confirm("That's a chonker! Are you sure? 🐘")) return;
+      if (!window.confirm(t('guess_form.alert_chonker'))) return;
     }
 
     if (guessDate.isBefore(dayjs(), 'day')) {
-      alert("Can't wager a date in the past! 🕰️");
+      alert(t('guess_form.alert_past_date'));
       return;
     }
 
     if (event.due_date) {
       const maxDate = dayjs(event.due_date).add(1, 'month');
       if (guessDate.isAfter(maxDate)) {
-        alert("Date can't be more than 1 month after due date! 📅");
+        alert(t('guess_form.alert_date_limit'));
         return;
       }
     }
@@ -61,7 +63,7 @@ export function GuessForm({ event }: GuessFormProps) {
       setGuessDate(null);
     } catch (err) {
       console.error(err);
-      alert('Failed to submit guess');
+      alert(t('guess_form.alert_submit_fail'));
     }
   };
 
@@ -71,25 +73,25 @@ export function GuessForm({ event }: GuessFormProps) {
     <Card sx={{ borderRadius: 4 }}>
       <CardContent>
         <Typography variant="h6" gutterBottom>
-          Make a Guess 🎲
+          {t('guess_form.title')}
         </Typography>
         <Stack spacing={2}>
           <TextField
-            label="Your Name"
+            label={t('guess_form.field_name')}
             size="small"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
           <Stack direction="row" spacing={2}>
             <DatePicker
-              label="Date"
+              label={t('guess_form.field_date')}
               value={guessDate}
               onChange={(newValue) => setGuessDate(newValue)}
               slotProps={{ textField: { size: 'small' } }}
             />
           </Stack>
           <TextField
-            label="Weight (kg)"
+            label={t('guess_form.field_weight')}
             type="number"
             inputProps={{ step: 0.01 }}
             size="small"
@@ -97,7 +99,7 @@ export function GuessForm({ event }: GuessFormProps) {
             onChange={(e) => setWeight(e.target.value)}
           />
           <Box>
-            <Typography variant="caption">Color</Typography>
+            <Typography variant="caption">{t('guess_form.field_color')}</Typography>
             <input
               type="color"
               value={color}
@@ -106,7 +108,7 @@ export function GuessForm({ event }: GuessFormProps) {
             />
           </Box>
           <Button variant="contained" onClick={handleSubmit} disabled={isDisabled}>
-            Submit Guess
+            {t('guess_form.button_submit')}
           </Button>
         </Stack>
       </CardContent>

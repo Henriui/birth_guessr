@@ -1,11 +1,14 @@
 import { Chip, Container, Grid, Paper, Typography } from '@mui/material';
 import type { EventData } from './types';
+import { useTranslation } from 'react-i18next';
 
 interface EventHeaderProps {
   event: EventData;
 }
 
 export function EventHeader({ event }: EventHeaderProps) {
+  const { t } = useTranslation();
+
   return (
     <Paper sx={{ p: 3, mb: 4, borderRadius: 0 }}>
       <Container maxWidth="lg">
@@ -22,7 +25,7 @@ export function EventHeader({ event }: EventHeaderProps) {
               color="text.secondary"
               display="block"
             >
-              Invite Key
+              {t('event_header.invite_key')}
             </Typography>
             <Chip
               label={event.event_key}

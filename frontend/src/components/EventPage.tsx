@@ -6,10 +6,12 @@ import { GuessesChart } from './GuessesChart';
 import { GuessForm } from './GuessForm';
 import { GuessList } from './GuessList';
 import type { ChartPoint, EventData, Guess } from './types';
+import { useTranslation } from 'react-i18next';
 
 export default function EventPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const eventKey = searchParams.get('key');
   
   const [event, setEvent] = useState<EventData | null>(null);
@@ -62,7 +64,7 @@ export default function EventPage() {
         };
       } catch (err) {
         console.error(err);
-        alert('Could not load event');
+        alert(t('event_page.alert_load_fail'));
       }
     };
 
@@ -74,7 +76,7 @@ export default function EventPage() {
         sse.close();
       }
     };
-  }, [eventKey, navigate]);
+  }, [eventKey, navigate, t]);
 
   const uniqueGuesses = useMemo(() => {
     const seen = new Set<string>();
@@ -117,17 +119,17 @@ export default function EventPage() {
     }));
   }, [uniqueGuesses]);
 
-  if (!event) return <Typography p={4}>Loading...</Typography>;
+  if (!event) return <Typography p={4}>{t('event_page.loading')}</Typography>;
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f8fafc', pb: 8 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', pb: 8 }}>
       <EventHeader event={event} />
 
       <Container maxWidth="lg">
         <Grid container spacing={4}>
           <Grid item xs={12} lg={8}>
             <Paper sx={{ p: 3, borderRadius: 4, height: 500 }}>
-              <Typography variant="h6" gutterBottom>Guesses Graph 📊</Typography>
+              <Typography variant="h6" gutterBottom>{t('event_page.chart_title')}</Typography>
               <GuessesChart data={chartData} />
             </Paper>
           </Grid>

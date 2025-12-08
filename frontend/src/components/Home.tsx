@@ -4,9 +4,11 @@ import { Box, Button, Paper, TextField, Typography, Stack, Container } from '@mu
 import { DatePicker } from '@mui/x-date-pickers';
 import { Dayjs } from 'dayjs';
 import { Turnstile } from '@marsidev/react-turnstile';
+import { useTranslation } from 'react-i18next';
 
 export default function Home() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState<Dayjs | null>(null);
@@ -38,11 +40,11 @@ export default function Home() {
       } else {
         const txt = await res.text();
         console.error('Failed to create event:', txt);
-        alert('Failed to create event: ' + txt);
+        alert(t('home.alert_create_fail') + ': ' + txt);
       }
     } catch (err) {
       console.error(err);
-      alert('Error creating event');
+      alert(t('home.alert_create_error'));
     }
   };
 
@@ -54,22 +56,22 @@ export default function Home() {
     <Container maxWidth="sm" sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', py: 4 }}>
       <Paper elevation={3} sx={{ p: 4, width: '100%', borderRadius: 4 }}>
         <Typography variant="h4" component="h1" align="center" gutterBottom fontWeight="bold" color="primary">
-          Baby Birth Guessr 👶
+          {t('home.title')}
         </Typography>
         <Typography variant="body1" align="center" color="text.secondary" mb={4}>
-          Create an event and invite friends to guess!
+          {t('home.subtitle')}
         </Typography>
 
         <Stack spacing={3}>
           <TextField 
-            label="Event Title" 
+            label={t('home.field_title')}
             fullWidth 
             value={title} 
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Baby Smith"
+            placeholder={t('home.placeholder_title')}
           />
           <TextField 
-            label="Description (Optional)" 
+            label={t('home.field_description')}
             fullWidth 
             multiline 
             rows={3} 
@@ -77,7 +79,7 @@ export default function Home() {
             onChange={(e) => setDescription(e.target.value)}
           />
           <DatePicker
-            label="Expected Due Date"
+            label={t('home.field_due_date')}
             value={dueDate}
             onChange={(newValue) => setDueDate(newValue)}
             slotProps={{ textField: { fullWidth: true } }}
@@ -97,13 +99,13 @@ export default function Home() {
             disabled={!title || !turnstileToken}
             sx={{ py: 1.5 }}
           >
-            Create Event
+            {t('home.button_create')}
           </Button>
         </Stack>
 
         <Box sx={{ mt: 4, pt: 4, borderTop: '1px solid #e0e0e0' }}>
           <Typography variant="body2" align="center" color="text.secondary" mb={2}>
-            Have an invite key?
+            {t('home.join_text')}
           </Typography>
           <Stack direction="row" spacing={1}>
             <TextField 
@@ -114,7 +116,7 @@ export default function Home() {
               onChange={(e) => setJoinKey(e.target.value)}
             />
             <Button variant="outlined" onClick={handleJoin}>
-              Join
+              {t('home.button_join')}
             </Button>
           </Stack>
         </Box>

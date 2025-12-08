@@ -1,0 +1,41 @@
+{
+  "home": {
+    "title": "Baby Birth Guessr 👶",
+    "subtitle": "Create an event and invite friends to guess!",
+    "field_title": "Event Title",
+    "field_description": "Description (Optional)",
+    "field_due_date": "Expected Due Date",
+    "placeholder_title": "e.g. Baby Smith",
+    "button_create": "Create Event",
+    "join_text": "Have an invite key?",
+    "button_join": "Join",
+    "alert_create_fail": "Failed to create event",
+    "alert_create_error": "Error creating event"
+  },
+  "event_header": {
+    "invite_key": "Invite Key"
+  },
+  "guess_form": {
+    "title": "Make a Guess 🎲",
+    "field_name": "Your Name",
+    "field_date": "Date",
+    "field_weight": "Weight (kg)",
+    "field_color": "Color",
+    "button_submit": "Submit Guess",
+    "alert_weight_range": "Weight must be between 1kg and 10kg! ⚖️",
+    "alert_chonker": "That's a chonker! Are you sure? 🐘",
+    "alert_past_date": "Can't wager a date in the past! 🕰️",
+    "alert_date_limit": "Date can't be more than 1 month after due date! 📅",
+    "alert_submit_fail": "Failed to submit guess"
+  },
+  "guess_list": {
+    "title": "Recent Guesses",
+    "guess_summary": "{{weight}}kg on {{date}}"
+  },
+  "event_page": {
+    "loading": "Loading...",
+    "chart_title": "Guesses Graph 📊",
+    "alert_load_fail": "Could not load event",
+    "error_not_found": "Event not found"
+  }
+}
