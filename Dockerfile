@@ -1,7 +1,7 @@
 # Stage 1: Build Frontend
-FROM docker.io/library/node:20-slim AS frontend_builder
+FROM docker.io/library/node:25-slim AS frontend_builder
 WORKDIR /app/frontend
-COPY frontend/package*.json ./
+COPY frontend/package.json ./
 RUN npm config set strict-ssl false
 RUN npm install
 COPY frontend/ .

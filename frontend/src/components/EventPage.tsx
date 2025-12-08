@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Box, Container, Grid, Paper, Stack, Typography } from '@mui/material';
 import { EventHeader } from './EventHeader';

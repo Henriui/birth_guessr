@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Box, Button, Card, CardContent, Stack, TextField, Typography } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import dayjs, { Dayjs } from 'dayjs';
@@ -60,6 +60,7 @@ export function GuessForm({ event }: GuessFormProps) {
       setWeight('');
       setGuessDate(null);
     } catch (err) {
+      console.error(err);
       alert('Failed to submit guess');
     }
   };
