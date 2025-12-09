@@ -7,10 +7,13 @@
     "field_due_date": "Laskettu Aika",
     "placeholder_title": "esim. Vauva Virtanen",
     "button_create": "Luo Tapahtuma",
-    "join_text": "Onko sinulla kutsukoodi?",
+    "join_text": "Onko sinulla kutsukoodi tai -linkki?",
     "button_join": "Liity",
     "alert_create_fail": "Tapahtuman luonti epäonnistui",
     "alert_create_error": "Virhe tapahtuman luonnissa"
+  },
+  "common": {
+    "copy_link": "Kopioi linkki"
   },
   "event_header": {
     "invite_key": "Kutsukoodi"

@@ -14,7 +14,7 @@ use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 use std::env;
 use tokio::net::TcpListener;
 use tokio::sync::broadcast;
-use tower_http::services::ServeDir;
+use tower_http::services::{ServeDir, ServeFile};
 use tracing_subscriber::EnvFilter;
 
 use tracing;
@@ -39,19 +39,19 @@ async fn main() {
 
     // init logging
     tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::from_default_env())
-        .init();
+    .with_env_filter(EnvFilter::from_default_env())
+    .init();
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let manager = ConnectionManager::<PgConnection>::new(database_url);
     let pool = r2d2::Pool::builder()
-        .build(manager)
-        .expect("Failed to create pool.");
+    .build(manager)
+    .expect("Failed to create pool.");
 
     {
         let mut conn = pool.get().expect("Failed to get connection for migrations");
         conn.run_pending_migrations(MIGRATIONS)
-            .expect("Failed to run migrations");
+        .expect("Failed to run migrations");
     }
 
     let (tx, _rx) = broadcast::channel(100);
@@ -60,16 +60,19 @@ async fn main() {
 
     // define routes
     let app = Router::new()
-        .route("/api/health", get(health))
-        .route("/api/events", post(create_event))
-        .route("/api/events/by-key/{key}", get(get_event_by_key))
-        .route(
-            "/api/events/{id}/guesses",
-            post(submit_guess).get(get_event_guesses),
-        )
-        .route("/api/events/{id}/live", get(sse_subscribe))
-        .fallback_service(ServeDir::new("public"))
-        .with_state(state);
+    .route("/api/health", get(health))
+    .route("/api/events", post(create_event))
+    .route("/api/events/by-key/{key}", get(get_event_by_key))
+    .route(
+        "/api/events/{id}/guesses",
+        post(submit_guess).get(get_event_guesses),
+    )
+    .route("/api/events/{id}/live", get(sse_subscribe))
+    .fallback_service(
+        ServeDir::new("public")
+        .not_found_service(ServeFile::new("public/index.html")),
+    )
+    .with_state(state);
 
     // run server
     let host = env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());

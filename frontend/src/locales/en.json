@@ -7,10 +7,13 @@
     "field_due_date": "Expected Due Date",
     "placeholder_title": "e.g. Baby Smith",
     "button_create": "Create Event",
-    "join_text": "Have an invite key?",
+    "join_text": "Have an invite key or link?",
     "button_join": "Join",
     "alert_create_fail": "Failed to create event",
     "alert_create_error": "Error creating event"
+  },
+  "common": {
+    "copy_link": "Copy Link"
   },
   "event_header": {
     "invite_key": "Invite Key"
