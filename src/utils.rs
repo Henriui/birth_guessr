@@ -1,26 +1,22 @@
-use rand::{Rng, distributions::Alphanumeric};
+use rand::Rng;
 
 /// Generates a random event key in the format XXXXXX-XXXXXX-XXXXXX
 pub fn generate_event_key() -> String {
-    let rng = rand::thread_rng();
-    let part1: String = rng
-        .clone()
-        .sample_iter(&Alphanumeric)
-        .take(6)
-        .map(char::from)
+    let mut rng = rand::thread_rng();
+    let key: String = (0..18)
+        .map(|i| {
+            if i > 0 && i % 6 == 0 {
+                '-'
+            } else {
+                const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+                let idx = rng.gen_range(0..CHARSET.len());
+                CHARSET[idx] as char
+            }
+        })
         .collect();
-    let part2: String = rng
-        .clone()
-        .sample_iter(&Alphanumeric)
-        .take(6)
-        .map(char::from)
-        .collect();
-    let part3: String = rng
-        .clone()
-        .sample_iter(&Alphanumeric)
-        .take(6)
-        .map(char::from)
-        .collect();
+    key
+}
 
-    format!("{}-{}-{}", part1, part2, part3)
+pub fn generate_secret_key() -> String {
+    petname::petname(3, "-").unwrap_or_else(|| "secret-key-fallback".to_string())
 }

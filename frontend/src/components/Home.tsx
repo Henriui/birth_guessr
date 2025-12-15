@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Button, Paper, TextField, Typography, Stack, Container, Collapse } from '@mui/material';
+import { Box, Button, Paper, TextField, Typography, Stack, Container, Collapse, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, IconButton } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import dayjs, { Dayjs } from 'dayjs';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { useTranslation } from 'react-i18next';
+import { ContentCopy } from '@mui/icons-material';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ export default function Home() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [joinKey, setJoinKey] = useState('');
   const [turnstileToken, setTurnstileToken] = useState('');
+  const [createdEvent, setCreatedEvent] = useState<{key: string, secret: string} | null>(null);
 
   const handleCreate = async () => {
     try {
@@ -40,7 +42,9 @@ export default function Home() {
       
       if (res.ok) {
         const event = await res.json();
-        navigate(`/event?key=${event.event_key}`);
+        // event has event_key and secret_key
+        localStorage.setItem(`event_admin_key_${event.id}`, event.secret_key);
+        setCreatedEvent({ key: event.event_key, secret: event.secret_key });
       } else {
         const txt = await res.text();
         console.error('Failed to create event:', txt);
@@ -50,6 +54,12 @@ export default function Home() {
       console.error(err);
       alert(t('home.alert_create_error'));
     }
+  };
+
+  const handleDialogClose = () => {
+      if (createdEvent) {
+          navigate(`/event?key=${createdEvent.key}`);
+      }
   };
 
   const handleJoin = () => {
@@ -150,6 +160,28 @@ export default function Home() {
           </Stack>
         </Box>
       </Paper>
+
+      <Dialog open={!!createdEvent}>
+        <DialogTitle>{t('admin.secret_key_title')}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {t('admin.secret_key_desc')}
+          </DialogContentText>
+          <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Typography variant="h6" component="code" sx={{ fontFamily: 'monospace', fontWeight: 'bold' }}>
+              {createdEvent?.secret}
+            </Typography>
+            <IconButton onClick={() => navigator.clipboard.writeText(createdEvent?.secret || '')} title={t('admin.copy_key')}>
+              <ContentCopy />
+            </IconButton>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDialogClose} variant="contained" autoFocus>
+            {t('cookie_banner.button_ok')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }

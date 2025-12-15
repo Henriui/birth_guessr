@@ -50,9 +50,18 @@ pub struct Event {
     pub title: String,
     pub description: Option<String>,
     pub due_date: Option<NaiveDateTime>,
-    pub guess_close_date: Option<NaiveDateTime>,
     pub event_key: String,
     pub created_at: NaiveDateTime,
+    pub guess_close_date: Option<NaiveDateTime>,
+    #[serde(skip_serializing)]
+    pub secret_key: String,
+}
+
+#[derive(Serialize)]
+pub struct EventWithSecret {
+    #[serde(flatten)]
+    pub event: Event,
+    pub secret_key: String,
 }
 
 #[derive(Insertable)]
@@ -63,6 +72,7 @@ pub struct NewEvent<'a> {
     pub due_date: Option<NaiveDateTime>,
     pub guess_close_date: Option<NaiveDateTime>,
     pub event_key: &'a str,
+    pub secret_key: &'a str,
 }
 
 #[derive(Serialize, Clone, Debug)]

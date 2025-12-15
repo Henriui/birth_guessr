@@ -62,5 +62,17 @@
     "cookies_text": "Käytämme vain välttämättömiä evästeitä istunnon tilan tallentamiseen (esim. tieto siitä, oletko jo arvannut). Käytämme myös Cloudflare Turnstilea roskapostisuojaukseen.",
     "contact": "Yhteydenotto",
     "contact_text": "Jos haluat tietosi poistettavan, ota yhteyttä tapahtuman järjestäjään tai ylläpitäjään."
+  },
+  "admin": {
+    "secret_key_title": "Tapahtuma Luotu! 🔑",
+    "secret_key_desc": "Tallenna tämä salainen avain! Tarvitset sitä tapahtuman poistamiseen myöhemmin. Tallensimme sen myös selaimeesi väliaikaisesti.",
+    "copy_key": "Kopioi avain",
+    "delete_event": "Poista tapahtuma",
+    "delete_confirm_title": "Poista tapahtuma?",
+    "delete_confirm_desc": "Tätä toimintoa ei voi perua. Syötä salainen avain vahvistaaksesi.",
+    "field_secret_key": "Salainen avain",
+    "delete_success": "Tapahtuma poistettu",
+    "delete_fail": "Poisto epäonnistui. Tarkista avain.",
+    "cancel": "Peruuta"
   }
 }

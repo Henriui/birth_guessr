@@ -62,5 +62,17 @@
     "cookies_text": "We use essential cookies only to store your session state (e.g. if you have already guessed). We also use Cloudflare Turnstile for spam protection.",
     "contact": "Contact",
     "contact_text": "If you wish to have your data removed, please contact the event organizer or the administrator."
+  },
+  "admin": {
+    "secret_key_title": "Event Created! 🔑",
+    "secret_key_desc": "Save this secret key! You need it to delete this event later. We also saved it to your browser.",
+    "copy_key": "Copy Key",
+    "delete_event": "Delete Event",
+    "delete_confirm_title": "Delete Event?",
+    "delete_confirm_desc": "This action cannot be undone. Enter your secret key to confirm.",
+    "field_secret_key": "Secret Key",
+    "delete_success": "Event deleted",
+    "delete_fail": "Failed to delete event. Check your key.",
+    "cancel": "Cancel"
   }
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Box, Container, Grid, Paper, Stack, Typography } from '@mui/material';
+import { Box, Container, Grid, Paper, Stack, Typography, Button, Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions } from '@mui/material';
 import { EventHeader } from './EventHeader';
 import { GuessesChart } from './GuessesChart';
 import { GuessForm } from './GuessForm';
@@ -16,6 +16,8 @@ export default function EventPage() {
   
   const [event, setEvent] = useState<EventData | null>(null);
   const [guesses, setGuesses] = useState<Guess[]>([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteKey, setDeleteKey] = useState('');
 
   useEffect(() => {
     if (!eventKey) {
@@ -119,6 +121,34 @@ export default function EventPage() {
     }));
   }, [uniqueGuesses]);
 
+  const handleDeleteClick = () => {
+      if (!event) return;
+      const storedKey = localStorage.getItem(`event_admin_key_${event.id}`);
+      if (storedKey) setDeleteKey(storedKey);
+      setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+      if (!event) return;
+      try {
+          const res = await fetch(`/api/events/${event.id}`, {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ secret_key: deleteKey })
+          });
+          
+          if (res.ok) {
+              alert(t('admin.delete_success'));
+              navigate('/');
+          } else {
+              alert(t('admin.delete_fail'));
+          }
+      } catch (err) {
+          console.error(err);
+          alert(t('admin.delete_fail'));
+      }
+  };
+
   if (!event) return <Typography p={4}>{t('event_page.loading')}</Typography>;
 
   return (
@@ -142,7 +172,37 @@ export default function EventPage() {
             </Stack>
           </Grid>
         </Grid>
+
+        <Box display="flex" justifyContent="center" mt={8}>
+            <Button color="error" variant="outlined" onClick={handleDeleteClick}>
+                {t('admin.delete_event')}
+            </Button>
+        </Box>
       </Container>
+
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>{t('admin.delete_confirm_title')}</DialogTitle>
+        <DialogContent>
+          <DialogContentText mb={2}>
+            {t('admin.delete_confirm_desc')}
+          </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            label={t('admin.field_secret_key')}
+            fullWidth
+            variant="outlined"
+            value={deleteKey}
+            onChange={(e) => setDeleteKey(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)} color="inherit">{t('admin.cancel')}</Button>
+          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+            {t('admin.delete_event')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

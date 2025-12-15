@@ -9,6 +9,7 @@ diesel::table! {
         event_key -> Varchar,
         created_at -> Timestamp,
         guess_close_date -> Nullable<Timestamp>,
+        secret_key -> Varchar,
     }
 }
 

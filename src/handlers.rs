@@ -11,16 +11,52 @@ use tokio_stream::wrappers::BroadcastStream;
 use uuid::Uuid;
 
 use crate::{
-    models::{Event, GraphPoint, Guess, GuessUpdate, Invitee, NewEvent, NewGuess, NewInvitee},
+    models::{
+        Event, EventWithSecret, GraphPoint, Guess, GuessUpdate, Invitee, NewEvent, NewGuess,
+        NewInvitee,
+    },
     schema::events,
     types::AppState,
-    utils::generate_event_key,
+    utils::{generate_event_key, generate_secret_key},
 };
 
-// ... (health, create_event remain unchanged) ...
+// ... (health check remains same)
 
 pub async fn health() -> &'static str {
     "ok"
+}
+
+#[derive(Deserialize)]
+pub struct DeleteEventRequest {
+    pub secret_key: String,
+}
+
+pub async fn delete_event(
+    State(state): State<AppState>,
+    Path(event_id): Path<Uuid>,
+    Json(payload): Json<DeleteEventRequest>,
+) -> Result<StatusCode, StatusCode> {
+    use crate::schema::events::dsl::*;
+
+    let mut conn = state
+        .pool
+        .get()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let target_event = events
+        .find(event_id)
+        .first::<Event>(&mut conn)
+        .map_err(|_| StatusCode::NOT_FOUND)?;
+
+    if target_event.secret_key != payload.secret_key {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    diesel::delete(events.filter(id.eq(event_id)))
+        .execute(&mut conn)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(StatusCode::NO_CONTENT)
 }
 
 #[derive(Deserialize)]
@@ -40,7 +76,7 @@ struct TurnstileVerifyResponse {
 pub async fn create_event(
     State(state): State<AppState>,
     Json(payload): Json<CreateEventRequest>,
-) -> Result<Json<Event>, StatusCode> {
+) -> Result<Json<EventWithSecret>, StatusCode> {
     // Verify Turnstile Token
     let secret =
         std::env::var("TURNSTILE_SECRET_KEY").map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
@@ -68,6 +104,7 @@ pub async fn create_event(
     }
 
     let event_key = generate_event_key();
+    let secret_key = generate_secret_key();
 
     let new_event = NewEvent {
         title: &payload.title,
@@ -75,6 +112,7 @@ pub async fn create_event(
         due_date: payload.due_date,
         guess_close_date: payload.guess_close_date,
         event_key: &event_key,
+        secret_key: &secret_key,
     };
 
     let mut conn = state
@@ -88,7 +126,10 @@ pub async fn create_event(
         .get_result(&mut conn)
         .expect("Error saving new event");
 
-    Ok(Json(event))
+    // Construct response with explicit secret key
+    let response = EventWithSecret { event, secret_key };
+
+    Ok(Json(response))
 }
 
 pub async fn get_event_guesses(
