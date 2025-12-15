@@ -46,12 +46,13 @@
     "error_not_found": "Tapahtumaa ei löytynyt"
   },
   "cookie_banner": {
-    "message": "Käytämme välttämättömiä evästeitä parhaan käyttökokemuksen takaamiseksi.",
+    "message": "Käyttämällä sivustoa hyväksyt käyttöehdot ja välttämättömien evästeiden käytön.",
     "button_ok": "Selvä!"
   },
   "footer": {
     "copyright": "© Henri Uimonen. Kaikki oikeudet pidätetään.",
-    "privacy_policy": "Tietosuojaseloste"
+    "privacy_policy": "Tietosuojaseloste",
+    "terms_of_service": "Käyttöehdot"
   },
   "privacy": {
     "title": "Tietosuojaseloste",
@@ -74,5 +75,15 @@
     "delete_success": "Tapahtuma poistettu",
     "delete_fail": "Poisto epäonnistui. Tarkista avain.",
     "cancel": "Peruuta"
+  },
+  "terms": {
+    "title": "Käyttöehdot",
+    "intro": "Käyttämällä tätä palvelua hyväksyt seuraavat ehdot.",
+    "usage": "Käyttö",
+    "usage_text": "Tämä palvelu tarjotaan 'sellaisena kuin se on' viihdekäyttöön. Sitoudut olemaan käyttämättä palvelua laittomiin tai haitallisiin tarkoituksiin.",
+    "content": "Sisältö",
+    "content_text": "Olet vastuussa lähettämästäsi sisällöstä. Älä lähetä arkaluonteisia henkilötietoja tai sopimatonta sisältöä.",
+    "termination": "Irtisanominen",
+    "termination_text": "Pidätämme oikeuden poistaa mitä tahansa sisältöä tai estää pääsyn palveluun harkintamme mukaan."
   }
 }

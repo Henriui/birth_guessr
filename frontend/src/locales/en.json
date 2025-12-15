@@ -46,12 +46,13 @@
     "error_not_found": "Event not found"
   },
   "cookie_banner": {
-    "message": "We use essential cookies to ensure you get the best experience on our website.",
+    "message": "By using our site, you agree to our Terms of Service and use of essential cookies.",
     "button_ok": "Got it!"
   },
   "footer": {
     "copyright": "© Henri Uimonen. All rights reserved.",
-    "privacy_policy": "Privacy Policy"
+    "privacy_policy": "Privacy Policy",
+    "terms_of_service": "Terms of Service"
   },
   "privacy": {
     "title": "Privacy Policy",
@@ -74,5 +75,15 @@
     "delete_success": "Event deleted",
     "delete_fail": "Failed to delete event. Check your key.",
     "cancel": "Cancel"
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "intro": "By using this service, you agree to the following terms.",
+    "usage": "Usage",
+    "usage_text": "This service is provided 'as is' for entertainment purposes. You agree not to use this service for any illegal or malicious activities.",
+    "content": "Content",
+    "content_text": "You are responsible for the content you submit. Do not submit sensitive personal information or inappropriate content.",
+    "termination": "Termination",
+    "termination_text": "We reserve the right to remove any content or terminate access to the service at our discretion."
   }
 }

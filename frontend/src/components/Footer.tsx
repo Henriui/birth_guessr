@@ -22,6 +22,9 @@ export function Footer() {
         <Link component={RouterLink} to="/privacy" color="text.secondary" variant="caption">
           {t('footer.privacy_policy')}
         </Link>
+        <Link component={RouterLink} to="/terms" color="text.secondary" variant="caption">
+          {t('footer.terms_of_service')}
+        </Link>
       </Container>
     </Box>
   );
