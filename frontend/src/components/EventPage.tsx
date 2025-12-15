@@ -18,6 +18,7 @@ export default function EventPage() {
   const [guesses, setGuesses] = useState<Guess[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteKey, setDeleteKey] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!eventKey) {
@@ -66,7 +67,7 @@ export default function EventPage() {
         };
       } catch (err) {
         console.error(err);
-        alert(t('event_page.alert_load_fail'));
+        if (!cancelled) setError('event_page.error_not_found');
       }
     };
 
@@ -148,6 +149,24 @@ export default function EventPage() {
           alert(t('admin.delete_fail'));
       }
   };
+
+  if (error) {
+    return (
+      <Container maxWidth="sm" sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 4, width: '100%' }}>
+          <Typography variant="h2" gutterBottom>
+             🤷‍♂️
+          </Typography>
+          <Typography variant="h5" gutterBottom color="text.secondary">
+            {t(error)}
+          </Typography>
+          <Button variant="contained" onClick={() => navigate('/')} sx={{ mt: 2 }}>
+            {t('home.title')}
+          </Button>
+        </Paper>
+      </Container>
+    );
+  }
 
   if (!event) return <Typography p={4}>{t('event_page.loading')}</Typography>;
 
