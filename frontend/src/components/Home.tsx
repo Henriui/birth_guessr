@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Button, Paper, TextField, Typography, Stack, Container } from '@mui/material';
+import { Box, Button, Paper, TextField, Typography, Stack, Container, Collapse } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
-import { Dayjs } from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { useTranslation } from 'react-i18next';
 
@@ -12,6 +12,8 @@ export default function Home() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState<Dayjs | null>(null);
+  const [guessCloseDate, setGuessCloseDate] = useState<Dayjs | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [joinKey, setJoinKey] = useState('');
   const [turnstileToken, setTurnstileToken] = useState('');
 
@@ -20,8 +22,9 @@ export default function Home() {
       // Format: YYYY-MM-DDTHH:MM:SS (NaiveDateTime)
       // We append T12:00:00 for due dates without specific time
       const formattedDate = dueDate ? dueDate.format('YYYY-MM-DD') + 'T12:00:00' : null;
+      const formattedCloseDate = guessCloseDate ? guessCloseDate.format('YYYY-MM-DD') + 'T23:59:59' : null;
       
-      console.log('Sending payload:', { title, description, due_date: formattedDate });
+      console.log('Sending payload:', { title, description, due_date: formattedDate, guess_close_date: formattedCloseDate });
 
       const res = await fetch('/api/events', {
         method: 'POST',
@@ -30,6 +33,7 @@ export default function Home() {
           title,
           description: description || null,
           due_date: formattedDate,
+          guess_close_date: formattedCloseDate,
           turnstile_token: turnstileToken
         })
       });
@@ -84,6 +88,31 @@ export default function Home() {
             onChange={(newValue) => setDueDate(newValue)}
             slotProps={{ textField: { fullWidth: true } }}
           />
+
+          <Box>
+            <Button 
+                onClick={() => setShowAdvanced(!showAdvanced)} 
+                sx={{ mb: 1, textTransform: 'none' }}
+                size="small"
+            >
+                {showAdvanced ? '🔽' : '▶️'} {t('home.advanced_options')}
+            </Button>
+            <Collapse in={showAdvanced}>
+                <DatePicker
+                    label={t('home.field_guess_close_date')}
+                    value={guessCloseDate}
+                    onChange={(newValue) => setGuessCloseDate(newValue)}
+                    slotProps={{ 
+                        textField: { 
+                            fullWidth: true, 
+                            helperText: t('home.help_guess_close_date') 
+                        } 
+                    }}
+                    minDate={dayjs()}
+                    maxDate={dueDate || undefined}
+                  />
+            </Collapse>
+          </Box>
 
           <Box display="flex" justifyContent="center">
             <Turnstile

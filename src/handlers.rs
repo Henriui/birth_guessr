@@ -28,6 +28,7 @@ pub struct CreateEventRequest {
     pub title: String,
     pub description: Option<String>,
     pub due_date: Option<chrono::NaiveDateTime>,
+    pub guess_close_date: Option<chrono::NaiveDateTime>,
     pub turnstile_token: String,
 }
 
@@ -41,8 +42,9 @@ pub async fn create_event(
     Json(payload): Json<CreateEventRequest>,
 ) -> Result<Json<Event>, StatusCode> {
     // Verify Turnstile Token
-    let secret = std::env::var("TURNSTILE_SECRET_KEY").map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    
+    let secret =
+        std::env::var("TURNSTILE_SECRET_KEY").map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
     let client = reqwest::Client::new();
     let verify_result = client
         .post("https://challenges.cloudflare.com/turnstile/v0/siteverify")
@@ -71,6 +73,7 @@ pub async fn create_event(
         title: &payload.title,
         description: payload.description.as_deref(),
         due_date: payload.due_date,
+        guess_close_date: payload.guess_close_date,
         event_key: &event_key,
     };
 
@@ -162,6 +165,21 @@ pub async fn submit_guess(
         .pool
         .get()
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    // Check if guesses are still allowed
+    let event = events::table
+        .find(event_id_param)
+        .first::<Event>(&mut conn)
+        .map_err(|_| StatusCode::NOT_FOUND)?;
+
+    let now = chrono::Utc::now().naive_utc();
+    let close_date = event.guess_close_date.or(event.due_date);
+
+    if let Some(close) = close_date {
+        if now > close {
+            return Err(StatusCode::FORBIDDEN);
+        }
+    }
 
     // 1. Save to DB
     let (invitee, guess) = conn

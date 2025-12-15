@@ -50,6 +50,7 @@ pub struct Event {
     pub title: String,
     pub description: Option<String>,
     pub due_date: Option<NaiveDateTime>,
+    pub guess_close_date: Option<NaiveDateTime>,
     pub event_key: String,
     pub created_at: NaiveDateTime,
 }
@@ -60,6 +61,7 @@ pub struct NewEvent<'a> {
     pub title: &'a str,
     pub description: Option<&'a str>,
     pub due_date: Option<NaiveDateTime>,
+    pub guess_close_date: Option<NaiveDateTime>,
     pub event_key: &'a str,
 }
 

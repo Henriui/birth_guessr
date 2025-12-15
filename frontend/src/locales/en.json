@@ -9,6 +9,9 @@
     "button_create": "Create Event",
     "join_text": "Have an invite key or link?",
     "button_join": "Join",
+    "advanced_options": "Advanced Options",
+    "field_guess_close_date": "Guesses Allowed Until",
+    "help_guess_close_date": "Defaults to Due Date if left empty",
     "alert_create_fail": "Failed to create event",
     "alert_create_error": "Error creating event"
   },
@@ -29,7 +32,8 @@
     "alert_chonker": "That's a chonker! Are you sure? 🐘",
     "alert_past_date": "Can't wager a date in the past! 🕰️",
     "alert_date_limit": "Date can't be more than 1 month after due date! 📅",
-    "alert_submit_fail": "Failed to submit guess"
+    "alert_submit_fail": "Failed to submit guess",
+    "already_guessed": "You have already guessed! 🎉"
   },
   "guess_list": {
     "title": "Recent Guesses",
@@ -40,5 +44,23 @@
     "chart_title": "Guesses Graph 📊",
     "alert_load_fail": "Could not load event",
     "error_not_found": "Event not found"
+  },
+  "cookie_banner": {
+    "message": "We use essential cookies to ensure you get the best experience on our website.",
+    "button_ok": "Got it!"
+  },
+  "footer": {
+    "copyright": "© Henri Uimonen. All rights reserved.",
+    "privacy_policy": "Privacy Policy"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "intro": "This service is provided as a hobby project. We respect your privacy and only collect the minimum amount of data necessary to function.",
+    "data_collection": "Data Collection",
+    "data_collection_text": "We collect the display names and guess details (date, weight, color) you voluntarily provide. We do not require accounts or passwords.",
+    "cookies": "Cookies",
+    "cookies_text": "We use essential cookies only to store your session state (e.g. if you have already guessed). We also use Cloudflare Turnstile for spam protection.",
+    "contact": "Contact",
+    "contact_text": "If you wish to have your data removed, please contact the event organizer or the administrator."
   }
 }

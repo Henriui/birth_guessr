@@ -9,6 +9,9 @@
     "button_create": "Luo Tapahtuma",
     "join_text": "Onko sinulla kutsukoodi tai -linkki?",
     "button_join": "Liity",
+    "advanced_options": "Lisäasetukset",
+    "field_guess_close_date": "Arvaukset sallittu asti",
+    "help_guess_close_date": "Oletuksena laskettuun aikaan saakka",
     "alert_create_fail": "Tapahtuman luonti epäonnistui",
     "alert_create_error": "Virhe tapahtuman luonnissa"
   },
@@ -29,7 +32,8 @@
     "alert_chonker": "Melkoinen jötkäle! Oletko varma? 🐘",
     "alert_past_date": "Et voi veikata mennyttä päivämäärää! 🕰️",
     "alert_date_limit": "Päivämäärä ei voi olla yli kuukautta lasketun ajan jälkeen! 📅",
-    "alert_submit_fail": "Arvauksen lähetys epäonnistui"
+    "alert_submit_fail": "Arvauksen lähetys epäonnistui",
+    "already_guessed": "Olet jo arvannut! 🎉"
   },
   "guess_list": {
     "title": "Viimeisimmät Arvaukset",
@@ -40,5 +44,23 @@
     "chart_title": "Arvauskäyrä 📊",
     "alert_load_fail": "Tapahtumaa ei voitu ladata",
     "error_not_found": "Tapahtumaa ei löytynyt"
+  },
+  "cookie_banner": {
+    "message": "Käytämme välttämättömiä evästeitä parhaan käyttökokemuksen takaamiseksi.",
+    "button_ok": "Selvä!"
+  },
+  "footer": {
+    "copyright": "© Henri Uimonen. Kaikki oikeudet pidätetään.",
+    "privacy_policy": "Tietosuojaseloste"
+  },
+  "privacy": {
+    "title": "Tietosuojaseloste",
+    "intro": "Tämä palvelu on harrasteprojekti. Kunnioitamme yksityisyyttäsi ja keräämme vain palvelun toiminnan kannalta välttämättömät tiedot.",
+    "data_collection": "Tietojen keräys",
+    "data_collection_text": "Keräämme antamasi nimimerkin ja arvaustiedot (päivämäärä, paino, väri). Emme vaadi käyttäjätilejä tai salasanoja.",
+    "cookies": "Evästeet",
+    "cookies_text": "Käytämme vain välttämättömiä evästeitä istunnon tilan tallentamiseen (esim. tieto siitä, oletko jo arvannut). Käytämme myös Cloudflare Turnstilea roskapostisuojaukseen.",
+    "contact": "Yhteydenotto",
+    "contact_text": "Jos haluat tietosi poistettavan, ota yhteyttä tapahtuman järjestäjään tai ylläpitäjään."
   }
 }

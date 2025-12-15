@@ -8,6 +8,7 @@ diesel::table! {
         due_date -> Nullable<Timestamp>,
         event_key -> Varchar,
         created_at -> Timestamp,
+        guess_close_date -> Nullable<Timestamp>,
     }
 }
 

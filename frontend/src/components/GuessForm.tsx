@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, Button, Card, CardContent, Stack, TextField, Typography } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import dayjs, { Dayjs } from 'dayjs';
@@ -15,6 +15,16 @@ export function GuessForm({ event }: GuessFormProps) {
   const [weight, setWeight] = useState('');
   const [guessDate, setGuessDate] = useState<Dayjs | null>(null);
   const [color, setColor] = useState('#6366f1');
+  const [alreadyGuessed, setAlreadyGuessed] = useState(false);
+
+  useEffect(() => {
+    if (event?.id) {
+      const token = localStorage.getItem(`guess_token_${event.id}`);
+      if (token) {
+        setAlreadyGuessed(true);
+      }
+    }
+  }, [event?.id]);
 
   const handleSubmit = async () => {
     if (!event) return;
@@ -47,7 +57,7 @@ export function GuessForm({ event }: GuessFormProps) {
     try {
       const formattedDate = guessDate.format('YYYY-MM-DD') + 'T12:00:00';
 
-      await fetch(`/api/events/${event.id}/guesses`, {
+      const res = await fetch(`/api/events/${event.id}/guesses`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -58,9 +68,21 @@ export function GuessForm({ event }: GuessFormProps) {
         }),
       });
 
-      setName('');
-      setWeight('');
-      setGuessDate(null);
+      if (res.ok) {
+        const data = await res.json();
+        // data is [invitee, guess]
+        const invitee = data[0];
+        if (invitee && invitee.id) {
+            localStorage.setItem(`guess_token_${event.id}`, invitee.id);
+            setAlreadyGuessed(true);
+        }
+        
+        setName('');
+        setWeight('');
+        setGuessDate(null);
+      } else {
+        alert(t('guess_form.alert_submit_fail'));
+      }
     } catch (err) {
       console.error(err);
       alert(t('guess_form.alert_submit_fail'));
@@ -68,6 +90,18 @@ export function GuessForm({ event }: GuessFormProps) {
   };
 
   const isDisabled = !name || !weight || !guessDate;
+
+  if (alreadyGuessed) {
+    return (
+      <Card sx={{ borderRadius: 4 }}>
+        <CardContent sx={{ textAlign: 'center', py: 4 }}>
+          <Typography variant="h6" color="primary" gutterBottom>
+            {t('guess_form.already_guessed')}
+          </Typography>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card sx={{ borderRadius: 4 }}>
