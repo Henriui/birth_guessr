@@ -8,6 +8,7 @@ use axum::{
     routing::{get, post},
     serve,
 };
+use chrono::{Duration, Utc};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
@@ -33,6 +34,46 @@ use types::AppState;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
+async fn run_cleanup_task(pool: r2d2::Pool<ConnectionManager<PgConnection>>) {
+    // Run once on startup
+    cleanup_job(&pool).await;
+
+    // Then run every 24 hours
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(24 * 60 * 60));
+    loop {
+        interval.tick().await;
+        cleanup_job(&pool).await;
+    }
+}
+
+async fn cleanup_job(pool: &r2d2::Pool<ConnectionManager<PgConnection>>) {
+    let pool = pool.clone();
+    let result = tokio::task::spawn_blocking(move || {
+        use crate::schema::events::dsl::*;
+        let mut conn = match pool.get() {
+            Ok(c) => c,
+            Err(e) => return Err(format!("Failed to get connection: {}", e)),
+        };
+
+        let limit = Utc::now().naive_utc() - Duration::days(365);
+
+        diesel::delete(events.filter(created_at.lt(limit)))
+            .execute(&mut conn)
+            .map_err(|e| format!("Diesel error: {}", e))
+    })
+    .await;
+
+    match result {
+        Ok(Ok(count)) => {
+            if count > 0 {
+                tracing::info!("Cleaned up {} old events", count);
+            }
+        }
+        Ok(Err(e)) => tracing::error!("Error cleaning up events: {}", e),
+        Err(e) => tracing::error!("Cleanup task panicked: {}", e),
+    }
+}
+
 #[tokio::main]
 async fn main() {
     // load env variables from .env file
@@ -48,6 +89,12 @@ async fn main() {
     let pool = r2d2::Pool::builder()
         .build(manager)
         .expect("Failed to create pool.");
+
+    // Start cleanup task
+    let cleanup_pool = pool.clone();
+    tokio::spawn(async move {
+        run_cleanup_task(cleanup_pool).await;
+    });
 
     {
         let mut conn = pool.get().expect("Failed to get connection for migrations");
