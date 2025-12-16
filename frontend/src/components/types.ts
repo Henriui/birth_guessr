@@ -3,6 +3,7 @@ export interface EventData {
   title: string;
   description?: string;
   due_date?: string;
+  guess_close_date?: string;
   event_key: string;
   min_weight_kg?: number;
   max_weight_kg?: number;

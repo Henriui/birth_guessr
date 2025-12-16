@@ -155,6 +155,14 @@ export default function EventPage() {
   const allowGuessEdits = Boolean(event?.allow_guess_edits);
   const hasEnded = Boolean(event?.ended_at);
 
+  const guessingClosed = useMemo(() => {
+    if (!event) return true;
+    if (hasEnded) return true;
+    const close = event.guess_close_date ?? event.due_date;
+    if (!close) return false;
+    return dayjs().isAfter(dayjs(close));
+  }, [event, hasEnded]);
+
   const uniqueGuesses = useMemo(() => {
     const seen = new Set<string>();
     return guesses.filter((g) => {
@@ -548,15 +556,17 @@ export default function EventPage() {
               </Button>
             ) : (
               <>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={allowGuessEdits}
-                      onChange={(e) => handleToggleGuessEdits(e.target.checked)}
-                    />
-                  }
-                  label={t('admin.allow_guess_edits')}
-                />
+                {!guessingClosed && (
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={allowGuessEdits}
+                        onChange={(e) => handleToggleGuessEdits(e.target.checked)}
+                      />
+                    }
+                    label={t('admin.allow_guess_edits')}
+                  />
+                )}
                 {!hasEnded && (
                   <Button variant="outlined" onClick={handleAnswerOpen}>
                     {t('admin.set_answer')}
