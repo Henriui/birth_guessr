@@ -5,8 +5,13 @@ A real-time baby birth guessing game! Hosts create an event, and friends can gue
 ## Features
 
 *   **Create Events:** Hosts can create a betting event with a title, description, and expected due date.
+*   **Guess window:** Optionally set a separate guess close date (otherwise due date is used as the cutoff).
 *   **Real-time Dashboard:** Watch guesses pour in live via Server-Sent Events (SSE).
 *   **Visualizations:** Scatter plot of guesses (Date vs. Weight) using Recharts.
+*   **Event deletion (secret key):** Events can be deleted by providing a 3-word secret key (shown at creation time).
+*   **Privacy & Terms pages:** Built-in `/privacy` and `/terms` routes (linked in the footer).
+*   **Cookie banner:** Informs users about essential cookies and Terms acceptance.
+*   **Data retention:** Events and associated guesses are automatically deleted after 1 year.
 *   **Modern Stack:**
     *   **Backend:** Rust (Axum), Diesel (Postgres), Tokio (SSE/Broadcast).
     *   **Frontend:** React 19 (Vite), TypeScript, MUI, Recharts.
@@ -28,13 +33,7 @@ cp .env.example .env
 # Edit .env with your postgres credentials
 ```
 
-Run migrations:
-
-```bash
-cargo install diesel_cli --no-default-features --features postgres
-diesel setup
-diesel migration run
-```
+Migrations are embedded and run automatically on startup.
 
 ### 2. Backend
 
@@ -60,11 +59,55 @@ Open `http://localhost:5173` in your browser.
 
 > **Note:** The Vite dev server proxies `/api` requests to the Rust backend at port 3000.
 
+## Configuration
+
+### Environment variables
+
+See `.env.example` for the full list.
+
+- **`DATABASE_URL`** (required)
+  - PostgreSQL connection string.
+- **`TURNSTILE_SECRET_KEY`** (required for creating events)
+  - Cloudflare Turnstile server-side secret.
+- **`VITE_TURNSTILE_SITE_KEY`** (required for the frontend)
+  - Cloudflare Turnstile site key.
+  - For local dev, you can set this in your shell, or create `frontend/.env` with:
+    - `VITE_TURNSTILE_SITE_KEY=...`
+
+## Pages
+
+- **`/privacy`**: Privacy policy.
+- **`/terms`**: Terms of service.
+- **`/event?key=...`**: Event view.
+
+If an event key is invalid (or the event was deleted), the UI shows an "Event not found" screen.
+
+## Event deletion (secret key)
+
+When an event is created, the API returns a **3-word secret key** (e.g. `swift-amber-otter`).
+
+- The UI shows this key once at creation time and saves it locally in the browser.
+- Anyone can delete the event if they know the key (useful if the original creator loses browser storage).
+
+Local storage keys:
+
+- **`cookie_consent`**: cookie/terms banner dismissal.
+- **`event_admin_key_<event_id>`**: saved secret key for that event.
+
+## Data retention
+
+Events (and all associated guesses) are automatically deleted after **1 year**.
+
+- A background cleanup task runs on startup and then once every 24 hours.
+
 ## Architecture
 
 ### API Endpoints
 
 *   `POST /api/events`: Create a new event.
+    *   Returns event data and the `secret_key`.
+*   `DELETE /api/events/{id}`: Delete an event.
+    *   Body: `{ "secret_key": "three-word-key" }`
 *   `GET /api/events/by-key/{key}`: Retrieve event details by invite key.
 *   `POST /api/events/{id}/guesses`: Submit a new guess.
 *   `GET /api/events/{id}/guesses`: List all guesses for an event.
