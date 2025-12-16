@@ -127,6 +127,11 @@ pub enum LiveUpdate {
         event_id: Uuid,
         allow_guess_edits: bool,
     },
+    #[serde(rename = "event_description")]
+    EventDescription {
+        event_id: Uuid,
+        description: Option<String>,
+    },
     #[serde(rename = "event_ended")]
     EventEnded(EventEndedUpdate),
 }

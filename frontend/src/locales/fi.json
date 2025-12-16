@@ -107,7 +107,12 @@
     "field_birth_date": "Syntymäpäivä",
     "field_birth_weight": "Syntymäpaino (kg)",
     "set_answer_confirm": "Päätä peli",
-    "set_answer_failed": "Pelin päättäminen epäonnistui. Tarkista arvot ja salainen avain."
+    "set_answer_failed": "Pelin päättäminen epäonnistui. Tarkista arvot ja salainen avain.",
+    "edit_description": "Muokkaa kuvausta",
+    "edit_description_title": "Muokkaa kuvausta",
+    "edit_description_desc": "Päivitä tapahtuman kuvaus.",
+    "edit_description_failed": "Kuvauksen päivitys epäonnistui.",
+    "field_description": "Kuvaus"
   },
   "terms": {
     "title": "Käyttöehdot",

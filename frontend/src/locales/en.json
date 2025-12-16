@@ -107,7 +107,12 @@
     "field_birth_date": "Birth Date",
     "field_birth_weight": "Birth Weight (kg)",
     "set_answer_confirm": "End Game",
-    "set_answer_failed": "Failed to end game. Check values and your secret key."
+    "set_answer_failed": "Failed to end game. Check values and your secret key.",
+    "edit_description": "Edit description",
+    "edit_description_title": "Edit Description",
+    "edit_description_desc": "Update the event description.",
+    "edit_description_failed": "Failed to update description.",
+    "field_description": "Description"
   },
   "terms": {
     "title": "Terms of Service",

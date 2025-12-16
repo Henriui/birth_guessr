@@ -34,6 +34,10 @@ export default function EventPage() {
   const [claimKey, setClaimKey] = useState('');
   const [claimError, setClaimError] = useState<string | null>(null);
 
+  const [descriptionDialogOpen, setDescriptionDialogOpen] = useState(false);
+  const [descriptionDraft, setDescriptionDraft] = useState('');
+  const [descriptionError, setDescriptionError] = useState<string | null>(null);
+
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [editWeight, setEditWeight] = useState('');
@@ -108,6 +112,16 @@ export default function EventPage() {
               return {
                 ...prev,
                 allow_guess_edits: Boolean(parsed.data.allow_guess_edits),
+              };
+            });
+          }
+
+          if (parsed?.type === 'event_description' && parsed?.data) {
+            setEvent((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                description: parsed.data.description ?? null,
               };
             });
           }
@@ -296,6 +310,46 @@ export default function EventPage() {
     setClaimDialogOpen(true);
   };
 
+  const handleEditDescriptionOpen = () => {
+    if (!event) return;
+    if (!myAdminKey) return;
+    if (hasEnded) return;
+    setDescriptionError(null);
+    setDescriptionDraft(event.description ?? '');
+    setDescriptionDialogOpen(true);
+  };
+
+  const handleEditDescriptionSave = async () => {
+    if (!event) return;
+    if (!myAdminKey) return;
+    if (hasEnded) return;
+
+    setDescriptionError(null);
+
+    const normalized = descriptionDraft.trim();
+    const nextDescription = normalized.length ? normalized : null;
+
+    try {
+      const res = await fetch(`/api/events/${event.id}/description`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${myAdminKey}` },
+        body: JSON.stringify({ description: nextDescription }),
+      });
+
+      if (!res.ok) {
+        setDescriptionError(t('admin.edit_description_failed'));
+        return;
+      }
+
+      const updated: EventData = await res.json();
+      setEvent(updated);
+      setDescriptionDialogOpen(false);
+    } catch (err) {
+      console.error(err);
+      setDescriptionError(t('admin.edit_description_failed'));
+    }
+  };
+
   const handleClaimConfirm = async () => {
     if (!event) return;
     setClaimError(null);
@@ -477,7 +531,11 @@ export default function EventPage() {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', pb: 8 }}>
-      <EventHeader event={event} />
+      <EventHeader
+        event={event}
+        isAdmin={isClaimedAdmin && !hasEnded}
+        onEditDescription={handleEditDescriptionOpen}
+      />
 
       <Container maxWidth="lg">
         <Grid container spacing={4}>
@@ -602,6 +660,40 @@ export default function EventPage() {
           </Button>
           <Button onClick={handleClaimConfirm} variant="contained">
             {t('admin.claim_confirm')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={descriptionDialogOpen} onClose={() => setDescriptionDialogOpen(false)}>
+        <DialogTitle>{t('admin.edit_description_title')}</DialogTitle>
+        <DialogContent>
+          <DialogContentText mb={2}>{t('admin.edit_description_desc')}</DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            label={t('admin.field_description')}
+            fullWidth
+            variant="outlined"
+            multiline
+            minRows={3}
+            value={descriptionDraft}
+            onChange={(e) => {
+              setDescriptionDraft(e.target.value);
+              if (descriptionError) setDescriptionError(null);
+            }}
+          />
+          {descriptionError && (
+            <Typography variant="body2" color="error" mt={1}>
+              {descriptionError}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDescriptionDialogOpen(false)} color="inherit">
+            {t('admin.cancel')}
+          </Button>
+          <Button onClick={handleEditDescriptionSave} variant="contained">
+            {t('guess_edit.save')}
           </Button>
         </DialogActions>
       </Dialog>

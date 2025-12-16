@@ -1,7 +1,7 @@
 export interface EventData {
   id: string;
   title: string;
-  description?: string;
+  description?: string | null;
   due_date?: string;
   guess_close_date?: string;
   event_key: string;

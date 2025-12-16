@@ -29,8 +29,8 @@ mod utils;
 
 use handlers::{
     claim_event, create_event, delete_event, get_event_by_key, get_event_guesses, health,
-    delete_guess, set_event_answer, sse_subscribe, submit_guess, update_event_settings,
-    update_guess,
+    delete_guess, set_event_answer, sse_subscribe, submit_guess, update_event_description,
+    update_event_settings, share_event_preview, update_guess,
 };
 use types::{AppState, RateLimiter};
 
@@ -119,6 +119,7 @@ async fn main() {
         .route("/api/events/{id}", axum::routing::delete(delete_event))
         .route("/api/events/{id}/claim", post(claim_event))
         .route("/api/events/by-key/{key}", get(get_event_by_key))
+        .route("/share/{key}", get(share_event_preview))
         .route(
             "/api/events/{id}/guesses",
             post(submit_guess).get(get_event_guesses),
@@ -130,6 +131,10 @@ async fn main() {
         .route(
             "/api/events/{id}/settings",
             axum::routing::put(update_event_settings),
+        )
+        .route(
+            "/api/events/{id}/description",
+            axum::routing::put(update_event_description),
         )
         .route("/api/events/{id}/answer", post(set_event_answer))
         .route("/api/events/live", get(sse_subscribe))

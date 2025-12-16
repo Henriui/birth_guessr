@@ -1,6 +1,7 @@
 use axum::{
     extract::{ConnectInfo, Json, Path, Query, State},
     http::{HeaderMap, StatusCode},
+    response::Html,
     response::sse::{Event as SseEvent, KeepAlive, Sse},
 };
 use diesel::prelude::*;
@@ -25,6 +26,21 @@ use crate::{
 
 pub async fn health() -> &'static str {
     "ok"
+}
+
+fn html_escape(input: &str) -> String {
+    let mut out = String::with_capacity(input.len());
+    for ch in input.chars() {
+        match ch {
+            '&' => out.push_str("&amp;"),
+            '<' => out.push_str("&lt;"),
+            '>' => out.push_str("&gt;"),
+            '"' => out.push_str("&quot;"),
+            '\'' => out.push_str("&#x27;"),
+            _ => out.push(ch),
+        }
+    }
+    out
 }
 
 fn bearer_secret(headers: &HeaderMap) -> Option<&str> {
@@ -233,6 +249,73 @@ pub async fn get_event_by_key(
     Ok(Json(event))
 }
 
+pub async fn share_event_preview(
+    State(state): State<AppState>,
+    Path(key): Path<String>,
+    headers: HeaderMap,
+) -> Result<Html<String>, StatusCode> {
+    use crate::schema::events::dsl::{event_key, events};
+
+    let mut conn = state
+        .pool
+        .get()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let event = events
+        .filter(event_key.eq(&key))
+        .first::<Event>(&mut conn)
+        .map_err(|_| StatusCode::NOT_FOUND)?;
+
+    let host = headers
+        .get("x-forwarded-host")
+        .or_else(|| headers.get("host"))
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("localhost");
+
+    let scheme = headers
+        .get("x-forwarded-proto")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("http");
+
+    let base_url = format!("{}://{}", scheme, host);
+    let event_url = format!("{}/event?key={}", base_url, key);
+    let share_url = format!("{}/share/{}", base_url, key);
+    let og_image = format!("{}/vite.svg", base_url);
+
+    let og_title = html_escape(&event.title);
+    let og_description = html_escape(
+        event
+            .description
+            .as_deref()
+            .unwrap_or("Join the guessing game."),
+    );
+
+    let html = format!(
+        r#"<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{og_title}</title>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="{og_title}" />
+    <meta property="og:description" content="{og_description}" />
+    <meta property="og:url" content="{share_url}" />
+    <meta property="og:image" content="{og_image}" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="{og_title}" />
+    <meta name="twitter:description" content="{og_description}" />
+    <meta http-equiv="refresh" content="0; url={event_url}" />
+  </head>
+  <body>
+    <a href="{event_url}">Open event</a>
+  </body>
+</html>\n"#
+    );
+
+    Ok(Html(html))
+}
+
 #[derive(Deserialize)]
 pub struct SubmitGuessRequest {
     pub display_name: String,
@@ -426,6 +509,7 @@ pub async fn update_guess(
         event_id: event_id_param,
         guess: updated.clone(),
     };
+
     let _ = state.tx.send(LiveUpdate::Guess(update));
 
     Ok(Json(updated))
@@ -476,6 +560,48 @@ pub async fn delete_guess(
     }));
 
     Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Deserialize)]
+pub struct UpdateEventDescriptionRequest {
+    pub description: Option<String>,
+}
+
+pub async fn update_event_description(
+    State(state): State<AppState>,
+    Path(event_id_param): Path<Uuid>,
+    headers: HeaderMap,
+    Json(payload): Json<UpdateEventDescriptionRequest>,
+) -> Result<Json<Event>, StatusCode> {
+    use crate::schema::events::dsl::*;
+
+    let mut conn = state
+        .pool
+        .get()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let target_event = events
+        .find(event_id_param)
+        .first::<Event>(&mut conn)
+        .map_err(|_| StatusCode::NOT_FOUND)?;
+
+    let secret = bearer_secret(&headers).ok_or(StatusCode::FORBIDDEN)?;
+    if target_event.secret_key != secret {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    let updated_event = diesel::update(events.find(event_id_param))
+        .set(description.eq(payload.description.clone()))
+        .returning(Event::as_returning())
+        .get_result(&mut conn)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let _ = state.tx.send(LiveUpdate::EventDescription {
+        event_id: event_id_param,
+        description: updated_event.description.clone(),
+    });
+
+    Ok(Json(updated_event))
 }
 
 #[derive(Deserialize)]
@@ -720,6 +846,7 @@ pub async fn sse_subscribe(
                 LiveUpdate::Guess(g) => g.event_id == event_id_param,
                 LiveUpdate::GuessDeleted(g) => g.event_id == event_id_param,
                 LiveUpdate::EventSettings { event_id, .. } => *event_id == event_id_param,
+                LiveUpdate::EventDescription { event_id, .. } => *event_id == event_id_param,
                 LiveUpdate::EventEnded(e) => e.event_id == event_id_param,
             };
 
