@@ -2,6 +2,7 @@ import { Avatar, Card, CardContent, IconButton, List, ListItem, ListItemAvatar, 
 import type { Guess } from './types';
 import { useTranslation } from 'react-i18next';
 import { Delete, Edit } from '@mui/icons-material';
+import dayjs from 'dayjs';
 
 interface GuessListProps {
   guesses: Guess[];
@@ -13,7 +14,7 @@ interface GuessListProps {
 }
 
 export function GuessList({ guesses, myInviteeId, allowGuessEdits, onEditGuess, isAdmin, onDeleteGuess }: GuessListProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
 
   return (
     <Card sx={{ borderRadius: 4, flexGrow: 1 }}>
@@ -47,7 +48,7 @@ export function GuessList({ guesses, myInviteeId, allowGuessEdits, onEditGuess, 
                 primary={g.display_name}
                 secondary={t('guess_list.guess_summary', {
                   weight: g.guessed_weight_kg,
-                  date: new Date(g.guessed_date).toLocaleDateString(i18n.language)
+                  date: dayjs(g.guessed_date).format('DD/MM/YYYY')
                 })}
               />
             </ListItem>

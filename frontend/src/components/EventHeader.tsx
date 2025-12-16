@@ -1,7 +1,7 @@
 import { Chip, Container, Grid, IconButton, Paper, Typography } from '@mui/material';
 import type { EventData } from './types';
 import { useTranslation } from 'react-i18next';
-import EditIcon from '@mui/icons-material/Edit';
+import { Edit as EditIcon } from '@mui/icons-material';
 
 interface EventHeaderProps {
   event: EventData;

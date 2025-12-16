@@ -156,6 +156,7 @@ export function GuessForm({ event }: GuessFormProps) {
                 setGuessDate(newValue);
                 if (error) setError(null);
               }}
+              format="DD/MM/YYYY"
               slotProps={{
                 textField: { size: 'small', error: Boolean(error) },
               }}

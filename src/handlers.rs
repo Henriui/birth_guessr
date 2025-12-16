@@ -306,9 +306,21 @@ pub async fn share_event_preview(
     <meta name="twitter:title" content="{og_title}" />
     <meta name="twitter:description" content="{og_description}" />
     <meta http-equiv="refresh" content="0; url={event_url}" />
+    <script>
+      window.location.replace({event_url:?});
+    </script>
   </head>
   <body>
-    <a href="{event_url}">Open event</a>
+    <main style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 24px; max-width: 720px; margin: 0 auto;">
+      <h1 style="margin: 0 0 8px; font-size: 20px;">Opening event…</h1>
+      <p style="margin: 0 0 16px; color: #444;">If you aren't redirected automatically, click the link below.</p>
+      <p style="margin: 0;">
+        <a href="{event_url}" style="font-size: 16px;">Open event</a>
+      </p>
+      <noscript>
+        <p style="margin-top: 16px; color: #444;">JavaScript is disabled in your browser. Use the link above to open the event.</p>
+      </noscript>
+    </main>
   </body>
 </html>\n"#
     );

@@ -22,7 +22,7 @@ interface EventEndedAnnouncement {
 export default function EventPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const eventKey = searchParams.get('key');
   
   const [event, setEvent] = useState<EventData | null>(null);
@@ -524,7 +524,7 @@ export default function EventPage() {
   const closestWeightTop = endedAnnouncement?.closest_weight_top ?? [];
 
   const formatGuessSummary = (g: Guess) => {
-    const date = new Date(g.guessed_date).toLocaleDateString(i18n.language);
+    const date = dayjs(g.guessed_date).format('DD/MM/YYYY');
     const weight = Number(g.guessed_weight_kg).toFixed(2);
     return `${date} — ${weight} kg`;
   };
@@ -755,6 +755,7 @@ export default function EventPage() {
                 setEditDate(newValue);
                 if (editError) setEditError(null);
               }}
+              format="DD/MM/YYYY"
               slotProps={{
                 textField: { size: 'small', error: Boolean(editError) },
               }}
@@ -802,6 +803,7 @@ export default function EventPage() {
                 setAnswerBirthDate(newValue);
                 if (answerError) setAnswerError(null);
               }}
+              format="DD/MM/YYYY"
               slotProps={{
                 textField: { size: 'small', error: Boolean(answerError) },
               }}

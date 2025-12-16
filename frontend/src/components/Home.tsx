@@ -102,6 +102,7 @@ export default function Home() {
             label={t('home.field_due_date')}
             value={dueDate}
             onChange={(newValue) => setDueDate(newValue)}
+            format="DD/MM/YYYY"
             slotProps={{ textField: { fullWidth: true } }}
           />
 
@@ -118,6 +119,7 @@ export default function Home() {
                     label={t('home.field_guess_close_date')}
                     value={guessCloseDate}
                     onChange={(newValue) => setGuessCloseDate(newValue)}
+                    format="DD/MM/YYYY"
                     slotProps={{ 
                         textField: { 
                             fullWidth: true, 
