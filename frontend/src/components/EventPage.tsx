@@ -23,6 +23,7 @@ export default function EventPage() {
 
   const [claimDialogOpen, setClaimDialogOpen] = useState(false);
   const [claimKey, setClaimKey] = useState('');
+  const [claimError, setClaimError] = useState<string | null>(null);
 
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editName, setEditName] = useState('');
@@ -67,14 +68,28 @@ export default function EventPage() {
         // 3. SSE
         sse = new EventSource(`/api/events/${evtData.id}/live`);
         sse.onmessage = (msg) => {
-          const newGuess: Guess = JSON.parse(msg.data);
-          setGuesses((prev) => {
-            const idx = prev.findIndex((g) => g.invitee_id === newGuess.invitee_id);
-            if (idx === -1) return [...prev, newGuess];
-            const next = [...prev];
-            next[idx] = newGuess;
-            return next;
-          });
+          const parsed = JSON.parse(msg.data);
+          if (parsed?.type === 'guess' && parsed?.data?.guess) {
+            const newGuess: Guess = parsed.data.guess;
+            setGuesses((prev) => {
+              const idx = prev.findIndex((g) => g.invitee_id === newGuess.invitee_id);
+              if (idx === -1) return [...prev, newGuess];
+              const next = [...prev];
+              next[idx] = newGuess;
+              return next;
+            });
+            return;
+          }
+
+          if (parsed?.type === 'event_settings' && parsed?.data) {
+            setEvent((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                allow_guess_edits: Boolean(parsed.data.allow_guess_edits),
+              };
+            });
+          }
         };
 
         sse.onerror = (err) => {
@@ -233,13 +248,31 @@ export default function EventPage() {
   const handleClaimOpen = () => {
     if (!event) return;
     setClaimKey('');
+    setClaimError(null);
     setClaimDialogOpen(true);
   };
 
-  const handleClaimConfirm = () => {
+  const handleClaimConfirm = async () => {
     if (!event) return;
-    localStorage.setItem(`event_admin_key_${event.id}`, claimKey);
-    setClaimDialogOpen(false);
+    setClaimError(null);
+    try {
+      const res = await fetch(`/api/events/${event.id}/claim`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret_key: claimKey }),
+      });
+      if (!res.ok) {
+        setClaimError(t('admin.claim_failed'));
+        return;
+      }
+      const updated: EventData = await res.json();
+      localStorage.setItem(`event_admin_key_${event.id}`, claimKey);
+      setEvent(updated);
+      setClaimDialogOpen(false);
+    } catch (err) {
+      console.error(err);
+      setClaimError(t('admin.claim_failed'));
+    }
   };
 
   const handleToggleGuessEdits = async (enabled: boolean) => {
@@ -343,6 +376,11 @@ export default function EventPage() {
             value={claimKey}
             onChange={(e) => setClaimKey(e.target.value)}
           />
+          {claimError && (
+            <Typography variant="body2" color="error" mt={1}>
+              {claimError}
+            </Typography>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setClaimDialogOpen(false)} color="inherit">

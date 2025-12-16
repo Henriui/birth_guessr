@@ -95,3 +95,15 @@ pub struct GuessUpdate {
     pub event_id: Uuid,
     pub guess: GraphPoint,
 }
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(tag = "type", content = "data")]
+pub enum LiveUpdate {
+    #[serde(rename = "guess")]
+    Guess(GuessUpdate),
+    #[serde(rename = "event_settings")]
+    EventSettings {
+        event_id: Uuid,
+        allow_guess_edits: bool,
+    },
+}

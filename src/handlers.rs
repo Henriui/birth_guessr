@@ -12,8 +12,8 @@ use uuid::Uuid;
 
 use crate::{
     models::{
-        Event, EventWithSecret, GraphPoint, Guess, GuessUpdate, Invitee, NewEvent, NewGuess,
-        NewInvitee,
+        Event, EventWithSecret, GraphPoint, Guess, GuessUpdate, Invitee, LiveUpdate, NewEvent,
+        NewGuess, NewInvitee,
     },
     schema::events,
     types::AppState,
@@ -298,7 +298,7 @@ pub async fn submit_guess(
         },
     };
     // We ignore errors here (e.g. if no one is listening)
-    let _ = state.tx.send(update);
+    let _ = state.tx.send(LiveUpdate::Guess(update));
 
     Ok(Json((invitee, guess)))
 }
@@ -397,7 +397,7 @@ pub async fn update_guess(
         event_id: event_id_param,
         guess: updated.clone(),
     };
-    let _ = state.tx.send(update);
+    let _ = state.tx.send(LiveUpdate::Guess(update));
 
     Ok(Json(updated))
 }
@@ -435,7 +435,41 @@ pub async fn update_event_settings(
         .get_result(&mut conn)
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
+    let _ = state.tx.send(LiveUpdate::EventSettings {
+        event_id: event_id_param,
+        allow_guess_edits: updated_event.allow_guess_edits,
+    });
+
     Ok(Json(updated_event))
+}
+
+#[derive(Deserialize)]
+pub struct ClaimEventRequest {
+    pub secret_key: String,
+}
+
+pub async fn claim_event(
+    State(state): State<AppState>,
+    Path(event_id_param): Path<Uuid>,
+    Json(payload): Json<ClaimEventRequest>,
+) -> Result<Json<Event>, StatusCode> {
+    use crate::schema::events::dsl::*;
+
+    let mut conn = state
+        .pool
+        .get()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let target_event = events
+        .find(event_id_param)
+        .first::<Event>(&mut conn)
+        .map_err(|_| StatusCode::NOT_FOUND)?;
+
+    if target_event.secret_key != payload.secret_key {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    Ok(Json(target_event))
 }
 
 pub async fn sse_subscribe(
@@ -444,19 +478,22 @@ pub async fn sse_subscribe(
 ) -> Sse<impl Stream<Item = Result<SseEvent, axum::Error>>> {
     let rx = state.tx.subscribe();
 
-    let stream = BroadcastStream::new(rx).filter_map(move |result| {
-        match result {
-            Ok(update) => {
-                // Only forward updates for this specific event
-                if update.event_id == event_id_param {
-                    if let Ok(json) = serde_json::to_string(&update.guess) {
-                        return Some(Ok(SseEvent::default().data(json)));
-                    }
-                }
-                None
+    let stream = BroadcastStream::new(rx).filter_map(move |result| match result {
+        Ok(update) => {
+            let matches_event = match &update {
+                LiveUpdate::Guess(g) => g.event_id == event_id_param,
+                LiveUpdate::EventSettings { event_id, .. } => *event_id == event_id_param,
+            };
+
+            if !matches_event {
+                return None;
             }
-            Err(_) => None, // Lagged or closed, ignore
+
+            serde_json::to_string(&update)
+                .ok()
+                .map(|json| Ok(SseEvent::default().data(json)))
         }
+        Err(_) => None,
     });
 
     Sse::new(stream).keep_alive(KeepAlive::default())

@@ -27,8 +27,8 @@ mod types;
 mod utils;
 
 use handlers::{
-    create_event, delete_event, get_event_by_key, get_event_guesses, health, sse_subscribe,
-    submit_guess, update_event_settings, update_guess,
+    claim_event, create_event, delete_event, get_event_by_key, get_event_guesses, health,
+    sse_subscribe, submit_guess, update_event_settings, update_guess,
 };
 use types::AppState;
 
@@ -111,6 +111,7 @@ async fn main() {
         .route("/api/health", get(health))
         .route("/api/events", post(create_event))
         .route("/api/events/{id}", axum::routing::delete(delete_event))
+        .route("/api/events/{id}/claim", post(claim_event))
         .route("/api/events/by-key/{key}", get(get_event_by_key))
         .route(
             "/api/events/{id}/guesses",

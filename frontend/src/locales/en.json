@@ -84,6 +84,7 @@
     "claim_title": "Claim Event Admin",
     "claim_desc": "Enter the secret key to enable admin controls in this browser.",
     "claim_confirm": "Claim",
+    "claim_failed": "Claim failed. Check your secret key.",
     "allow_guess_edits": "Allow guess edits",
     "delete_event": "Delete Event",
     "delete_confirm_title": "Delete Event?",

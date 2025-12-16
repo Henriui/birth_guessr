@@ -84,6 +84,7 @@
     "claim_title": "Ota tapahtuman ylläpito käyttöön",
     "claim_desc": "Syötä salainen avain ottaaksesi ylläpitotoiminnot käyttöön tässä selaimessa.",
     "claim_confirm": "Ota käyttöön",
+    "claim_failed": "Ylläpidon käyttöönotto epäonnistui. Tarkista salainen avain.",
     "allow_guess_edits": "Salli arvausten muokkaus",
     "delete_event": "Poista tapahtuma",
     "delete_confirm_title": "Poista tapahtuma?",
