@@ -108,6 +108,39 @@ export function GuessesChart({ data, minY, maxY }: GuessesChartProps) {
   const paddedMin = domainMin - 0.05;
   const paddedMax = domainMax + 0.05;
 
+  type XDomain = [number, number] | ['auto', 'auto'];
+
+  const { xDomain, xTicks } = (() => {
+    if (!data || data.length === 0) {
+      return { xDomain: ['auto', 'auto'] as XDomain, xTicks: undefined as number[] | undefined };
+    }
+
+    const dayMs = 24 * 60 * 60 * 1000;
+    const xs = data.map((d) => d.x);
+    const rawMin = Math.min(...xs);
+    const rawMax = Math.max(...xs);
+
+    const minDay = new Date(rawMin);
+    minDay.setHours(0, 0, 0, 0);
+    const maxDay = new Date(rawMax);
+    maxDay.setHours(0, 0, 0, 0);
+
+    const spanDays = Math.round((maxDay.getTime() - minDay.getTime()) / dayMs) + 1;
+
+    if (spanDays >= 5) {
+      return { xDomain: ['auto', 'auto'] as XDomain, xTicks: undefined as number[] | undefined };
+    }
+
+    const extraDays = 5 - spanDays;
+    const padLeft = Math.floor(extraDays / 2);
+    const start = minDay.getTime() - padLeft * dayMs;
+    const end = start + 4 * dayMs;
+
+    const ticks = Array.from({ length: 5 }, (_, i) => start + i * dayMs);
+
+    return { xDomain: [start, end] as XDomain, xTicks: ticks };
+  })();
+
   return (
     <ResponsiveContainer width="100%" height="100%">
       <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
@@ -116,7 +149,8 @@ export function GuessesChart({ data, minY, maxY }: GuessesChartProps) {
           type="number"
           dataKey="x"
           name="Date"
-          domain={['auto', 'auto']}
+          domain={xDomain}
+          ticks={xTicks}
           tickFormatter={(unixTime) => new Date(unixTime).toLocaleDateString()}
         />
         <YAxis type="number" dataKey="y" name="Weight" unit="kg" domain={[paddedMin, paddedMax]} />

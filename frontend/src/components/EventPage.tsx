@@ -103,40 +103,37 @@ export default function EventPage() {
 
   // Chart Data Preparation
   const chartData: ChartPoint[] = useMemo(() => {
-    const WEIGHT_EPSILON_KG = 0.05;
-
-    const groups = new Map<
-      string,
-      { x: number; y: number; subPoints: { name: string; color: string; weightKg: number }[] }
-    >();
-
-    uniqueGuesses.forEach((g) => {
-      const x = new Date(g.guessed_date).getTime();
-      const y = g.guessed_weight_kg;
-
-      // Bucket weights that are very close together so they don't visually hide each other.
-      // We use the same date (x) and a rounded weight bucket (yBucket) as the grouping key.
-      const yBucket = Math.round(y / WEIGHT_EPSILON_KG) * WEIGHT_EPSILON_KG;
-      const key = `${x}-${yBucket}`;
-
-      if (!groups.has(key)) {
-        groups.set(key, { x, y: yBucket, subPoints: [] });
+    const hashStringToU32 = (s: string) => {
+      let h = 2166136261;
+      for (let i = 0; i < s.length; i++) {
+        h ^= s.charCodeAt(i);
+        h = Math.imul(h, 16777619);
       }
-      groups.get(key)!.subPoints.push({
+      return h >>> 0;
+    };
+
+    const dayMs = 24 * 60 * 60 * 1000;
+
+    return uniqueGuesses.map((g) => {
+      const d = new Date(g.guessed_date);
+      d.setHours(0, 0, 0, 0);
+      const dayStart = d.getTime();
+
+      const seed = `${g.display_name}|${g.color_hex}|${g.guessed_date}|${g.guessed_weight_kg}`;
+      const r = hashStringToU32(seed) / 0xffffffff;
+
+      const minOffset = 0.15 * dayMs;
+      const maxOffset = 0.85 * dayMs;
+      const x = dayStart + (minOffset + r * (maxOffset - minOffset));
+
+      return {
+        x,
+        y: g.guessed_weight_kg,
+        z: g.guessed_weight_kg,
         name: g.display_name,
         color: g.color_hex,
-        weightKg: y,
-      });
+      };
     });
-
-    return Array.from(groups.values()).map((grp) => ({
-      x: grp.x,
-      y: grp.y,
-      z: grp.y, // for bubble size
-      name: grp.subPoints.map((s) => s.name).join(', '),
-      color: grp.subPoints[0].color,
-      subPoints: grp.subPoints,
-    }));
   }, [uniqueGuesses]);
 
   const handleDeleteClick = () => {
