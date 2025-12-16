@@ -13,6 +13,7 @@ use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 use std::env;
+use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tokio::sync::broadcast;
 use tower_http::services::{ServeDir, ServeFile};
@@ -31,7 +32,7 @@ use handlers::{
     delete_guess, set_event_answer, sse_subscribe, submit_guess, update_event_settings,
     update_guess,
 };
-use types::AppState;
+use types::{AppState, RateLimiter};
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
@@ -105,7 +106,11 @@ async fn main() {
 
     let (tx, _rx) = broadcast::channel(100);
 
-    let state = AppState { pool, tx };
+    let state = AppState {
+        pool,
+        tx,
+        rate_limiter: std::sync::Arc::new(RateLimiter::new()),
+    };
 
     // define routes
     let app = Router::new()
@@ -127,7 +132,7 @@ async fn main() {
             axum::routing::put(update_event_settings),
         )
         .route("/api/events/{id}/answer", post(set_event_answer))
-        .route("/api/events/{id}/live", get(sse_subscribe))
+        .route("/api/events/live", get(sse_subscribe))
         .fallback_service(
             ServeDir::new("public").not_found_service(ServeFile::new("public/index.html")),
         )
@@ -139,5 +144,10 @@ async fn main() {
     let addr = format!("{}:{}", host, port);
     let listener = TcpListener::bind(&addr).await.unwrap();
     tracing::info!("Listening on http://{}", addr);
-    serve(listener, app).await.unwrap();
+    serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await
+    .unwrap();
 }

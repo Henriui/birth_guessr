@@ -1,11 +1,12 @@
 use axum::{
-    extract::{Json, Path, State},
-    http::StatusCode,
+    extract::{ConnectInfo, Json, Path, Query, State},
+    http::{HeaderMap, StatusCode},
     response::sse::{Event as SseEvent, KeepAlive, Sse},
 };
 use diesel::prelude::*;
 use futures::stream::Stream;
 use serde::Deserialize;
+use std::net::{IpAddr, SocketAddr};
 use tokio_stream::StreamExt;
 use tokio_stream::wrappers::BroadcastStream;
 use uuid::Uuid;
@@ -26,15 +27,31 @@ pub async fn health() -> &'static str {
     "ok"
 }
 
-#[derive(Deserialize)]
-pub struct DeleteEventRequest {
-    pub secret_key: String,
+fn bearer_secret(headers: &HeaderMap) -> Option<&str> {
+    headers
+        .get(axum::http::header::AUTHORIZATION)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| s.strip_prefix("Bearer "))
+}
+
+fn client_ip(headers: &HeaderMap, peer: SocketAddr) -> IpAddr {
+    if let Some(xff) = headers
+        .get("x-forwarded-for")
+        .and_then(|v| v.to_str().ok())
+    {
+        if let Some(first) = xff.split(',').next().map(|s| s.trim()) {
+            if let Ok(ip) = first.parse::<IpAddr>() {
+                return ip;
+            }
+        }
+    }
+    peer.ip()
 }
 
 pub async fn delete_event(
     State(state): State<AppState>,
     Path(event_id): Path<Uuid>,
-    Json(payload): Json<DeleteEventRequest>,
+    headers: HeaderMap,
 ) -> Result<StatusCode, StatusCode> {
     use crate::schema::events::dsl::*;
 
@@ -48,7 +65,8 @@ pub async fn delete_event(
         .first::<Event>(&mut conn)
         .map_err(|_| StatusCode::NOT_FOUND)?;
 
-    if target_event.secret_key != payload.secret_key {
+    let secret = bearer_secret(&headers).ok_or(StatusCode::FORBIDDEN)?;
+    if target_event.secret_key != secret {
         return Err(StatusCode::FORBIDDEN);
     }
 
@@ -144,13 +162,13 @@ pub async fn create_event(
     let mut conn = state
         .pool
         .get()
-        .expect("couldn't get db connection from pool");
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let event = diesel::insert_into(events::table)
         .values(&new_event)
         .returning(Event::as_returning())
         .get_result(&mut conn)
-        .expect("Error saving new event");
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     // Construct response with explicit secret key
     let response = EventWithSecret { event, secret_key };
@@ -224,11 +242,18 @@ pub struct SubmitGuessRequest {
 }
 
 pub async fn submit_guess(
+    ConnectInfo(peer): ConnectInfo<SocketAddr>,
+    headers: HeaderMap,
     State(state): State<AppState>,
     Path(event_id_param): Path<Uuid>,
     Json(payload): Json<SubmitGuessRequest>,
 ) -> Result<Json<(Invitee, Guess)>, StatusCode> {
     use crate::schema::{guesses, invitees};
+
+    let ip = client_ip(&headers, peer);
+    if !state.rate_limiter.allow(ip, 10.0 / 60.0, 5.0).await {
+        return Err(StatusCode::TOO_MANY_REQUESTS);
+    }
 
     let mut conn = state
         .pool
@@ -406,15 +431,10 @@ pub async fn update_guess(
     Ok(Json(updated))
 }
 
-#[derive(Deserialize)]
-pub struct DeleteGuessRequest {
-    pub secret_key: String,
-}
-
 pub async fn delete_guess(
     State(state): State<AppState>,
     Path((event_id_param, invitee_id_param)): Path<(Uuid, Uuid)>,
-    Json(payload): Json<DeleteGuessRequest>,
+    headers: HeaderMap,
 ) -> Result<StatusCode, StatusCode> {
     use crate::schema::{events, invitees};
 
@@ -432,7 +452,8 @@ pub async fn delete_guess(
         return Err(StatusCode::FORBIDDEN);
     }
 
-    if event.secret_key != payload.secret_key {
+    let secret = bearer_secret(&headers).ok_or(StatusCode::FORBIDDEN)?;
+    if event.secret_key != secret {
         return Err(StatusCode::FORBIDDEN);
     }
 
@@ -459,13 +480,13 @@ pub async fn delete_guess(
 
 #[derive(Deserialize)]
 pub struct UpdateEventSettingsRequest {
-    pub secret_key: String,
     pub allow_guess_edits: bool,
 }
 
 pub async fn update_event_settings(
     State(state): State<AppState>,
     Path(event_id_param): Path<Uuid>,
+    headers: HeaderMap,
     Json(payload): Json<UpdateEventSettingsRequest>,
 ) -> Result<Json<Event>, StatusCode> {
     use crate::schema::events::dsl::*;
@@ -480,7 +501,8 @@ pub async fn update_event_settings(
         .first::<Event>(&mut conn)
         .map_err(|_| StatusCode::NOT_FOUND)?;
 
-    if target_event.secret_key != payload.secret_key {
+    let secret = bearer_secret(&headers).ok_or(StatusCode::FORBIDDEN)?;
+    if target_event.secret_key != secret {
         return Err(StatusCode::FORBIDDEN);
     }
 
@@ -498,17 +520,18 @@ pub async fn update_event_settings(
     Ok(Json(updated_event))
 }
 
-#[derive(Deserialize)]
-pub struct ClaimEventRequest {
-    pub secret_key: String,
-}
-
 pub async fn claim_event(
+    ConnectInfo(peer): ConnectInfo<SocketAddr>,
+    headers: HeaderMap,
     State(state): State<AppState>,
     Path(event_id_param): Path<Uuid>,
-    Json(payload): Json<ClaimEventRequest>,
 ) -> Result<Json<Event>, StatusCode> {
     use crate::schema::events::dsl::*;
+
+    let ip = client_ip(&headers, peer);
+    if !state.rate_limiter.allow(ip, 6.0 / 60.0, 3.0).await {
+        return Err(StatusCode::TOO_MANY_REQUESTS);
+    }
 
     let mut conn = state
         .pool
@@ -520,7 +543,8 @@ pub async fn claim_event(
         .first::<Event>(&mut conn)
         .map_err(|_| StatusCode::NOT_FOUND)?;
 
-    if target_event.secret_key != payload.secret_key {
+    let secret = bearer_secret(&headers).ok_or(StatusCode::FORBIDDEN)?;
+    if target_event.secret_key != secret {
         return Err(StatusCode::FORBIDDEN);
     }
 
@@ -529,7 +553,6 @@ pub async fn claim_event(
 
 #[derive(Deserialize)]
 pub struct SetEventAnswerRequest {
-    pub secret_key: String,
     pub birth_date: chrono::NaiveDateTime,
     pub birth_weight_kg: f64,
 }
@@ -537,6 +560,7 @@ pub struct SetEventAnswerRequest {
 pub async fn set_event_answer(
     State(state): State<AppState>,
     Path(event_id_param): Path<Uuid>,
+    headers: HeaderMap,
     Json(payload): Json<SetEventAnswerRequest>,
 ) -> Result<Json<EventEndedUpdate>, StatusCode> {
     use crate::schema::{events, guesses, invitees};
@@ -557,7 +581,8 @@ pub async fn set_event_answer(
         .first::<Event>(&mut conn)
         .map_err(|_| StatusCode::NOT_FOUND)?;
 
-    if target_event.secret_key != payload.secret_key {
+    let secret = bearer_secret(&headers).ok_or(StatusCode::FORBIDDEN)?;
+    if target_event.secret_key != secret {
         return Err(StatusCode::FORBIDDEN);
     }
 
@@ -665,10 +690,28 @@ pub async fn set_event_answer(
     Ok(Json(update))
 }
 
+#[derive(Deserialize)]
+pub struct SseSubscribeQuery {
+    pub event_key: String,
+}
+
 pub async fn sse_subscribe(
-    Path(event_id_param): Path<Uuid>,
+    Query(params): Query<SseSubscribeQuery>,
     State(state): State<AppState>,
-) -> Sse<impl Stream<Item = Result<SseEvent, axum::Error>>> {
+) -> Result<Sse<impl Stream<Item = Result<SseEvent, axum::Error>>>, StatusCode> {
+    use crate::schema::events::dsl::*;
+
+    let mut conn = state
+        .pool
+        .get()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let event_id_param = events
+        .filter(event_key.eq(params.event_key))
+        .select(id)
+        .first::<Uuid>(&mut conn)
+        .map_err(|_| StatusCode::NOT_FOUND)?;
+
     let rx = state.tx.subscribe();
 
     let stream = BroadcastStream::new(rx).filter_map(move |result| match result {
@@ -691,5 +734,5 @@ pub async fn sse_subscribe(
         Err(_) => None,
     });
 
-    Sse::new(stream).keep_alive(KeepAlive::default())
+    Ok(Sse::new(stream).keep_alive(KeepAlive::default()))
 }

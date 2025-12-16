@@ -81,7 +81,7 @@ export default function EventPage() {
         if (cancelled) return;
 
         // 3. SSE
-        sse = new EventSource(`/api/events/${evtData.id}/live`);
+        sse = new EventSource(`/api/events/live?event_key=${encodeURIComponent(eventKey)}`);
         sse.onmessage = (msg) => {
           const parsed = JSON.parse(msg.data);
           if (parsed?.type === 'guess' && parsed?.data?.guess) {
@@ -302,8 +302,7 @@ export default function EventPage() {
     try {
       const res = await fetch(`/api/events/${event.id}/claim`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ secret_key: claimKey }),
+        headers: { Authorization: `Bearer ${claimKey}` },
       });
       if (!res.ok) {
         setClaimError(t('admin.claim_failed'));
@@ -326,8 +325,8 @@ export default function EventPage() {
     try {
       const res = await fetch(`/api/events/${event.id}/settings`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ secret_key: myAdminKey, allow_guess_edits: enabled }),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${myAdminKey}` },
+        body: JSON.stringify({ allow_guess_edits: enabled }),
       });
       if (!res.ok) return;
       const updated: EventData = await res.json();
@@ -342,8 +341,7 @@ export default function EventPage() {
       try {
           const res = await fetch(`/api/events/${event.id}`, {
               method: 'DELETE',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ secret_key: deleteKey })
+              headers: { Authorization: `Bearer ${deleteKey}` },
           });
           
           if (res.ok) {
@@ -369,8 +367,7 @@ export default function EventPage() {
     try {
       const res = await fetch(`/api/events/${event.id}/guesses/${g.invitee_id}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ secret_key: myAdminKey }),
+        headers: { Authorization: `Bearer ${myAdminKey}` },
       });
 
       if (!res.ok) {
@@ -412,9 +409,8 @@ export default function EventPage() {
       const formattedDate = answerBirthDate.format('YYYY-MM-DD') + 'T12:00:00';
       const res = await fetch(`/api/events/${event.id}/answer`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${myAdminKey}` },
         body: JSON.stringify({
-          secret_key: myAdminKey,
           birth_date: formattedDate,
           birth_weight_kg: w,
         }),
