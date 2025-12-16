@@ -141,14 +141,12 @@ export default function EventPage() {
           }
         };
 
-        sse.onerror = (err) => {
-          console.error('SSE error', err);
+        sse.onerror = () => {
           // If the event was deleted while viewing it, the live stream will fail.
           // Send the user back to the front page.
           if (!cancelled) navigate('/');
         };
-      } catch (err) {
-        console.error(err);
+      } catch {
         if (!cancelled) navigate('/');
       }
     };
@@ -255,8 +253,7 @@ export default function EventPage() {
       });
 
       setEditDialogOpen(false);
-    } catch (err) {
-      console.error(err);
+    } catch {
       setEditError(t('guess_edit.error_save_failed'));
     }
   };
@@ -344,8 +341,7 @@ export default function EventPage() {
       const updated: EventData = await res.json();
       setEvent(updated);
       setDescriptionDialogOpen(false);
-    } catch (err) {
-      console.error(err);
+    } catch {
       setDescriptionError(t('admin.edit_description_failed'));
     }
   };
@@ -366,8 +362,7 @@ export default function EventPage() {
       localStorage.setItem(`event_admin_key_${event.id}`, claimKey);
       setEvent(updated);
       setClaimDialogOpen(false);
-    } catch (err) {
-      console.error(err);
+    } catch {
       setClaimError(t('admin.claim_failed'));
     }
   };
@@ -385,8 +380,8 @@ export default function EventPage() {
       if (!res.ok) return;
       const updated: EventData = await res.json();
       setEvent(updated);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      return;
     }
   };
 
@@ -404,8 +399,7 @@ export default function EventPage() {
           } else {
               alert(t('admin.delete_fail'));
           }
-      } catch (err) {
-          console.error(err);
+      } catch {
           alert(t('admin.delete_fail'));
       }
   };
@@ -430,8 +424,7 @@ export default function EventPage() {
       }
 
       setGuesses((prev) => prev.filter((x) => x.invitee_id !== g.invitee_id));
-    } catch (err) {
-      console.error(err);
+    } catch {
       alert(t('guess_list.delete_failed'));
     }
   };
@@ -488,8 +481,7 @@ export default function EventPage() {
         };
       });
       setAnswerDialogOpen(false);
-    } catch (err) {
-      console.error(err);
+    } catch {
       setAnswerError(t('admin.set_answer_failed'));
     }
   };

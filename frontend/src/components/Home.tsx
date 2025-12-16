@@ -28,8 +28,6 @@ export default function Home() {
       // We append T12:00:00 for due dates without specific time
       const formattedDate = dueDate ? dueDate.format('YYYY-MM-DD') + 'T12:00:00' : null;
       const formattedCloseDate = guessCloseDate ? guessCloseDate.format('YYYY-MM-DD') + 'T23:59:59' : null;
-      
-      console.log('Sending payload:', { title, description, due_date: formattedDate, guess_close_date: formattedCloseDate });
 
       const res = await fetch('/api/events', {
         method: 'POST',
@@ -53,11 +51,9 @@ export default function Home() {
         setCreatedEvent({ key: event.event_key, secret: event.secret_key });
       } else {
         const txt = await res.text();
-        console.error('Failed to create event:', txt);
         alert(t('home.alert_create_fail') + ': ' + txt);
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
       alert(t('home.alert_create_error'));
     }
   };

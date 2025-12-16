@@ -93,8 +93,7 @@ export function GuessForm({ event }: GuessFormProps) {
       } else {
         setError(t('guess_form.alert_submit_fail'));
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
       setError(t('guess_form.alert_submit_fail'));
     }
   };
