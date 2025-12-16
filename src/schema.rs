@@ -12,6 +12,7 @@ diesel::table! {
         secret_key -> Varchar,
         min_weight_kg -> Float8,
         max_weight_kg -> Float8,
+        allow_guess_edits -> Bool,
     }
 }
 

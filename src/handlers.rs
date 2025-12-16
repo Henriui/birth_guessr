@@ -68,6 +68,7 @@ pub struct CreateEventRequest {
     pub turnstile_token: String,
     pub min_weight_kg: Option<f64>,
     pub max_weight_kg: Option<f64>,
+    pub allow_guess_edits: Option<bool>,
 }
 
 #[derive(Deserialize)]
@@ -115,6 +116,7 @@ pub async fn create_event(
 
     let mut min_weight_kg = payload.min_weight_kg.unwrap_or(DEFAULT_MIN_WEIGHT_KG);
     let mut max_weight_kg = payload.max_weight_kg.unwrap_or(DEFAULT_MAX_WEIGHT_KG);
+    let allow_guess_edits = payload.allow_guess_edits.unwrap_or(false);
 
     if !min_weight_kg.is_finite() || !max_weight_kg.is_finite() {
         return Err(StatusCode::BAD_REQUEST);
@@ -136,6 +138,7 @@ pub async fn create_event(
         secret_key: &secret_key,
         min_weight_kg,
         max_weight_kg,
+        allow_guess_edits,
     };
 
     let mut conn = state
@@ -170,17 +173,19 @@ pub async fn get_event_guesses(
         .inner_join(guesses::table)
         .filter(invitees::event_id.eq(event_id_param))
         .select((
+            invitees::id,
             invitees::display_name,
             invitees::color_hex,
             guesses::guessed_date,
             guesses::guessed_weight_kg,
         ))
-        .load::<(String, String, chrono::NaiveDateTime, f64)>(&mut conn)
+        .load::<(Uuid, String, String, chrono::NaiveDateTime, f64)>(&mut conn)
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let points = results
         .into_iter()
-        .map(|(name, color, date, weight)| GraphPoint {
+        .map(|(invitee_id, name, color, date, weight)| GraphPoint {
+            invitee_id,
             display_name: name,
             color_hex: color,
             guessed_date: date,
@@ -285,6 +290,7 @@ pub async fn submit_guess(
     let update = GuessUpdate {
         event_id: event_id_param,
         guess: GraphPoint {
+            invitee_id: invitee.id,
             display_name: invitee.display_name.clone(),
             color_hex: invitee.color_hex.clone(),
             guessed_date: guess.guessed_date,
@@ -295,6 +301,141 @@ pub async fn submit_guess(
     let _ = state.tx.send(update);
 
     Ok(Json((invitee, guess)))
+}
+
+#[derive(Deserialize)]
+pub struct UpdateGuessRequest {
+    pub display_name: String,
+    pub guessed_date: chrono::NaiveDateTime,
+    pub guessed_weight_kg: f64,
+    pub color_hex: String,
+}
+
+pub async fn update_guess(
+    State(state): State<AppState>,
+    Path((event_id_param, invitee_id_param)): Path<(Uuid, Uuid)>,
+    Json(payload): Json<UpdateGuessRequest>,
+) -> Result<Json<GraphPoint>, StatusCode> {
+    use crate::schema::{events, guesses, invitees};
+
+    let mut conn = state
+        .pool
+        .get()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let event = events::table
+        .find(event_id_param)
+        .first::<Event>(&mut conn)
+        .map_err(|_| StatusCode::NOT_FOUND)?;
+
+    if !event.allow_guess_edits {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    if !payload.guessed_weight_kg.is_finite()
+        || payload.guessed_weight_kg < event.min_weight_kg
+        || payload.guessed_weight_kg > event.max_weight_kg
+    {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    let now = chrono::Utc::now().naive_utc();
+    let close_date = event.guess_close_date.or(event.due_date);
+    if let Some(close) = close_date {
+        if now > close {
+            return Err(StatusCode::FORBIDDEN);
+        }
+    }
+
+    // Ensure invitee belongs to event
+    let target_invitee = invitees::table
+        .find(invitee_id_param)
+        .first::<Invitee>(&mut conn)
+        .map_err(|_| StatusCode::NOT_FOUND)?;
+
+    if target_invitee.event_id != event_id_param {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    let updated = conn
+        .transaction::<GraphPoint, diesel::result::Error, _>(|conn| {
+            diesel::update(invitees::table.find(invitee_id_param))
+                .set((
+                    invitees::display_name.eq(&payload.display_name),
+                    invitees::color_hex.eq(&payload.color_hex),
+                ))
+                .execute(conn)?;
+
+            // Assumption: one guess per invitee.
+            let updated_guess_rows = diesel::update(
+                guesses::table.filter(guesses::invitee_id.eq(invitee_id_param)),
+            )
+                .set((
+                    guesses::guessed_date.eq(payload.guessed_date),
+                    guesses::guessed_weight_kg.eq(payload.guessed_weight_kg),
+                ))
+                .execute(conn)?;
+
+            if updated_guess_rows == 0 {
+                return Err(diesel::result::Error::NotFound);
+            }
+
+            Ok(GraphPoint {
+                invitee_id: invitee_id_param,
+                display_name: payload.display_name.clone(),
+                color_hex: payload.color_hex.clone(),
+                guessed_date: payload.guessed_date,
+                guessed_weight_kg: payload.guessed_weight_kg,
+            })
+        })
+        .map_err(|e| match e {
+            diesel::result::Error::NotFound => StatusCode::NOT_FOUND,
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
+        })?;
+
+    let update = GuessUpdate {
+        event_id: event_id_param,
+        guess: updated.clone(),
+    };
+    let _ = state.tx.send(update);
+
+    Ok(Json(updated))
+}
+
+#[derive(Deserialize)]
+pub struct UpdateEventSettingsRequest {
+    pub secret_key: String,
+    pub allow_guess_edits: bool,
+}
+
+pub async fn update_event_settings(
+    State(state): State<AppState>,
+    Path(event_id_param): Path<Uuid>,
+    Json(payload): Json<UpdateEventSettingsRequest>,
+) -> Result<Json<Event>, StatusCode> {
+    use crate::schema::events::dsl::*;
+
+    let mut conn = state
+        .pool
+        .get()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let target_event = events
+        .find(event_id_param)
+        .first::<Event>(&mut conn)
+        .map_err(|_| StatusCode::NOT_FOUND)?;
+
+    if target_event.secret_key != payload.secret_key {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    let updated_event = diesel::update(events.find(event_id_param))
+        .set(allow_guess_edits.eq(payload.allow_guess_edits))
+        .returning(Event::as_returning())
+        .get_result(&mut conn)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(updated_event))
 }
 
 pub async fn sse_subscribe(

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Button, Paper, TextField, Typography, Stack, Container, Collapse, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, IconButton } from '@mui/material';
+import { Box, Button, Paper, TextField, Typography, Stack, Container, Collapse, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, IconButton, FormControlLabel, Checkbox } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import dayjs, { Dayjs } from 'dayjs';
 import { Turnstile } from '@marsidev/react-turnstile';
@@ -17,6 +17,7 @@ export default function Home() {
   const [minWeightKg, setMinWeightKg] = useState('1.8');
   const [maxWeightKg, setMaxWeightKg] = useState('5.2');
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [allowGuessEdits, setAllowGuessEdits] = useState(false);
   const [joinKey, setJoinKey] = useState('');
   const [turnstileToken, setTurnstileToken] = useState('');
   const [createdEvent, setCreatedEvent] = useState<{key: string, secret: string} | null>(null);
@@ -41,6 +42,7 @@ export default function Home() {
           turnstile_token: turnstileToken,
           min_weight_kg: minWeightKg ? parseFloat(minWeightKg) : null,
           max_weight_kg: maxWeightKg ? parseFloat(maxWeightKg) : null,
+          allow_guess_edits: allowGuessEdits,
         })
       });
       
@@ -146,6 +148,17 @@ export default function Home() {
                     helperText={t('home.help_weight_range')}
                   />
                 </Stack>
+
+                <FormControlLabel
+                  sx={{ mt: 1 }}
+                  control={
+                    <Checkbox
+                      checked={allowGuessEdits}
+                      onChange={(e) => setAllowGuessEdits(e.target.checked)}
+                    />
+                  }
+                  label={t('home.field_allow_guess_edits')}
+                />
             </Collapse>
           </Box>
 

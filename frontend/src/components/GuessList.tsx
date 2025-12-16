@@ -1,12 +1,16 @@
-import { Avatar, Card, CardContent, List, ListItem, ListItemAvatar, ListItemText, Typography } from '@mui/material';
+import { Avatar, Card, CardContent, IconButton, List, ListItem, ListItemAvatar, ListItemText, Typography } from '@mui/material';
 import type { Guess } from './types';
 import { useTranslation } from 'react-i18next';
+import { Edit } from '@mui/icons-material';
 
 interface GuessListProps {
   guesses: Guess[];
+  myInviteeId?: string | null;
+  allowGuessEdits?: boolean;
+  onEditGuess?: (guess: Guess) => void;
 }
 
-export function GuessList({ guesses }: GuessListProps) {
+export function GuessList({ guesses, myInviteeId, allowGuessEdits, onEditGuess }: GuessListProps) {
   const { t, i18n } = useTranslation();
 
   return (
@@ -17,7 +21,16 @@ export function GuessList({ guesses }: GuessListProps) {
         </Typography>
         <List dense sx={{ maxHeight: 300, overflow: 'auto' }}>
           {[...guesses].reverse().map((g, i) => (
-            <ListItem key={i}>
+            <ListItem
+              key={i}
+              secondaryAction={
+                allowGuessEdits && myInviteeId && onEditGuess && g.invitee_id === myInviteeId ? (
+                  <IconButton edge="end" aria-label={t('guess_list.edit')} onClick={() => onEditGuess(g)}>
+                    <Edit fontSize="small" />
+                  </IconButton>
+                ) : null
+              }
+            >
               <ListItemAvatar>
                 <Avatar sx={{ bgcolor: g.color_hex, width: 24, height: 24 }}> </Avatar>
               </ListItemAvatar>

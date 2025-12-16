@@ -28,7 +28,7 @@ mod utils;
 
 use handlers::{
     create_event, delete_event, get_event_by_key, get_event_guesses, health, sse_subscribe,
-    submit_guess,
+    submit_guess, update_event_settings, update_guess,
 };
 use types::AppState;
 
@@ -115,6 +115,14 @@ async fn main() {
         .route(
             "/api/events/{id}/guesses",
             post(submit_guess).get(get_event_guesses),
+        )
+        .route(
+            "/api/events/{id}/guesses/{invitee_id}",
+            axum::routing::put(update_guess),
+        )
+        .route(
+            "/api/events/{id}/settings",
+            axum::routing::put(update_event_settings),
         )
         .route("/api/events/{id}/live", get(sse_subscribe))
         .fallback_service(

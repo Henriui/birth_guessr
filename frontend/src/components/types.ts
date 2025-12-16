@@ -6,9 +6,11 @@ export interface EventData {
   event_key: string;
   min_weight_kg?: number;
   max_weight_kg?: number;
+  allow_guess_edits?: boolean;
 }
 
 export interface Guess {
+  invitee_id: string;
   display_name: string;
   color_hex: string;
   guessed_date: string;

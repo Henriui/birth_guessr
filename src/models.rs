@@ -57,6 +57,7 @@ pub struct Event {
     pub secret_key: String,
     pub min_weight_kg: f64,
     pub max_weight_kg: f64,
+    pub allow_guess_edits: bool,
 }
 
 #[derive(Serialize)]
@@ -77,10 +78,12 @@ pub struct NewEvent<'a> {
     pub secret_key: &'a str,
     pub min_weight_kg: f64,
     pub max_weight_kg: f64,
+    pub allow_guess_edits: bool,
 }
 
 #[derive(Serialize, Clone, Debug)]
 pub struct GraphPoint {
+    pub invitee_id: Uuid,
     pub display_name: String,
     pub color_hex: String,
     pub guessed_date: NaiveDateTime,

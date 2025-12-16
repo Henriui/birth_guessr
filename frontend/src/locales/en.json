@@ -15,6 +15,7 @@
     "field_min_weight": "Min Weight (kg)",
     "field_max_weight": "Max Weight (kg)",
     "help_weight_range": "Defaults to 1.8–5.2 kg (reasonable range is 1–8 kg)",
+    "field_allow_guess_edits": "Allow participants to edit their guesses",
     "alert_create_fail": "Failed to create event",
     "alert_create_error": "Error creating event"
   },
@@ -40,7 +41,15 @@
   },
   "guess_list": {
     "title": "Recent Guesses",
+    "edit": "Edit",
     "guess_summary": "{{weight}}kg on {{date}}"
+  },
+  "guess_edit": {
+    "title": "Edit your guess",
+    "save": "Save",
+    "cancel": "Cancel",
+    "error_missing_date": "Please choose a date.",
+    "error_save_failed": "Failed to save changes"
   },
   "event_page": {
     "loading": "Loading...",
@@ -71,6 +80,11 @@
     "secret_key_title": "Event Created! 🔑",
     "secret_key_desc": "Save this secret key! You need it to delete this event later. We also saved it to your browser.",
     "copy_key": "Copy Key",
+    "claim_event": "Claim Admin",
+    "claim_title": "Claim Event Admin",
+    "claim_desc": "Enter the secret key to enable admin controls in this browser.",
+    "claim_confirm": "Claim",
+    "allow_guess_edits": "Allow guess edits",
     "delete_event": "Delete Event",
     "delete_confirm_title": "Delete Event?",
     "delete_confirm_desc": "This action cannot be undone. Enter your secret key to confirm.",

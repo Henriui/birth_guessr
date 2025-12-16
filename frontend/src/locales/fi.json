@@ -15,6 +15,7 @@
     "field_min_weight": "Minimipaino (kg)",
     "field_max_weight": "Maksimipaino (kg)",
     "help_weight_range": "Oletuksena 1.8–5.2 kg (järkevä haarukka 1–8 kg)",
+    "field_allow_guess_edits": "Salli osallistujien muokata arvauksiaan",
     "alert_create_fail": "Tapahtuman luonti epäonnistui",
     "alert_create_error": "Virhe tapahtuman luonnissa"
   },
@@ -40,7 +41,15 @@
   },
   "guess_list": {
     "title": "Viimeisimmät Arvaukset",
+    "edit": "Muokkaa",
     "guess_summary": "{{weight}}kg - {{date}}"
+  },
+  "guess_edit": {
+    "title": "Muokkaa arvaustasi",
+    "save": "Tallenna",
+    "cancel": "Peruuta",
+    "error_missing_date": "Valitse päivämäärä.",
+    "error_save_failed": "Tallennus epäonnistui"
   },
   "event_page": {
     "loading": "Ladataan...",
@@ -71,6 +80,11 @@
     "secret_key_title": "Tapahtuma Luotu! 🔑",
     "secret_key_desc": "Tallenna tämä salainen avain! Tarvitset sitä tapahtuman poistamiseen myöhemmin. Tallensimme sen myös selaimeesi väliaikaisesti.",
     "copy_key": "Kopioi avain",
+    "claim_event": "Ota ylläpito käyttöön",
+    "claim_title": "Ota tapahtuman ylläpito käyttöön",
+    "claim_desc": "Syötä salainen avain ottaaksesi ylläpitotoiminnot käyttöön tässä selaimessa.",
+    "claim_confirm": "Ota käyttöön",
+    "allow_guess_edits": "Salli arvausten muokkaus",
     "delete_event": "Poista tapahtuma",
     "delete_confirm_title": "Poista tapahtuma?",
     "delete_confirm_desc": "Tätä toimintoa ei voi perua. Syötä salainen avain vahvistaaksesi.",

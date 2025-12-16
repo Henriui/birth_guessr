@@ -1,0 +1,2 @@
+ALTER TABLE events
+ADD COLUMN allow_guess_edits BOOLEAN NOT NULL DEFAULT FALSE;
