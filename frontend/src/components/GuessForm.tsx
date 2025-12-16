@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Box, Button, Card, CardContent, Stack, TextField, Typography } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import dayjs, { Dayjs } from 'dayjs';
@@ -14,17 +14,23 @@ export function GuessForm({ event }: GuessFormProps) {
   const [name, setName] = useState('');
   const [weight, setWeight] = useState('');
   const [guessDate, setGuessDate] = useState<Dayjs | null>(null);
-  const [color, setColor] = useState('#6366f1');
-  const [alreadyGuessed, setAlreadyGuessed] = useState(false);
-
-  useEffect(() => {
-    if (event?.id) {
-      const token = localStorage.getItem(`guess_token_${event.id}`);
-      if (token) {
-        setAlreadyGuessed(true);
-      }
+  const [color, setColor] = useState(() => {
+    const bytes = new Uint8Array(3);
+    if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+      crypto.getRandomValues(bytes);
+    } else {
+      bytes[0] = Math.floor(Math.random() * 256);
+      bytes[1] = Math.floor(Math.random() * 256);
+      bytes[2] = Math.floor(Math.random() * 256);
     }
-  }, [event?.id]);
+    return `#${Array.from(bytes)
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('')}`;
+  });
+  const [submitted, setSubmitted] = useState(false);
+
+  const alreadyGuessed =
+    submitted || (event?.id ? Boolean(localStorage.getItem(`guess_token_${event.id}`)) : false);
 
   const handleSubmit = async () => {
     if (!event) return;
@@ -74,7 +80,7 @@ export function GuessForm({ event }: GuessFormProps) {
         const invitee = data[0];
         if (invitee && invitee.id) {
             localStorage.setItem(`guess_token_${event.id}`, invitee.id);
-            setAlreadyGuessed(true);
+            setSubmitted(true);
         }
         
         setName('');

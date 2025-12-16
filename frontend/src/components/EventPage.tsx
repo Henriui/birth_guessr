@@ -18,7 +18,6 @@ export default function EventPage() {
   const [guesses, setGuesses] = useState<Guess[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteKey, setDeleteKey] = useState('');
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!eventKey) {
@@ -33,7 +32,11 @@ export default function EventPage() {
       try {
         // 1. Get Event
         const evtRes = await fetch(`/api/events/by-key/${eventKey}`);
-        if (!evtRes.ok) throw new Error('Event not found');
+        if (!evtRes.ok) {
+          // If the event was deleted (or never existed), send the user back home.
+          navigate('/');
+          return;
+        }
         const evtData = await evtRes.json();
         if (cancelled) return;
         setEvent(evtData);
@@ -65,9 +68,16 @@ export default function EventPage() {
             return [...prev, newGuess];
           });
         };
+
+        sse.onerror = (err) => {
+          console.error('SSE error', err);
+          // If the event was deleted while viewing it, the live stream will fail.
+          // Send the user back to the front page.
+          if (!cancelled) navigate('/');
+        };
       } catch (err) {
         console.error(err);
-        if (!cancelled) setError('event_page.error_not_found');
+        if (!cancelled) navigate('/');
       }
     };
 
@@ -149,24 +159,6 @@ export default function EventPage() {
           alert(t('admin.delete_fail'));
       }
   };
-
-  if (error) {
-    return (
-      <Container maxWidth="sm" sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 4, width: '100%' }}>
-          <Typography variant="h2" gutterBottom>
-             🤷‍♂️
-          </Typography>
-          <Typography variant="h5" gutterBottom color="text.secondary">
-            {t(error)}
-          </Typography>
-          <Button variant="contained" onClick={() => navigate('/')} sx={{ mt: 2 }}>
-            {t('home.title')}
-          </Button>
-        </Paper>
-      </Container>
-    );
-  }
 
   if (!event) return <Typography p={4}>{t('event_page.loading')}</Typography>;
 
