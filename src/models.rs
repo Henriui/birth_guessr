@@ -58,6 +58,9 @@ pub struct Event {
     pub min_weight_kg: f64,
     pub max_weight_kg: f64,
     pub allow_guess_edits: bool,
+    pub birth_date: Option<NaiveDateTime>,
+    pub birth_weight_kg: Option<f64>,
+    pub ended_at: Option<NaiveDateTime>,
 }
 
 #[derive(Serialize)]
@@ -97,13 +100,33 @@ pub struct GuessUpdate {
 }
 
 #[derive(Clone, Debug, Serialize)]
+pub struct GuessDeletedUpdate {
+    pub event_id: Uuid,
+    pub invitee_id: Uuid,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct EventEndedUpdate {
+    pub event_id: Uuid,
+    pub birth_date: NaiveDateTime,
+    pub birth_weight_kg: f64,
+    pub ended_at: NaiveDateTime,
+    pub closest_date_top: Vec<GraphPoint>,
+    pub closest_weight_top: Vec<GraphPoint>,
+}
+
+#[derive(Clone, Debug, Serialize)]
 #[serde(tag = "type", content = "data")]
 pub enum LiveUpdate {
     #[serde(rename = "guess")]
     Guess(GuessUpdate),
+    #[serde(rename = "guess_deleted")]
+    GuessDeleted(GuessDeletedUpdate),
     #[serde(rename = "event_settings")]
     EventSettings {
         event_id: Uuid,
         allow_guess_edits: bool,
     },
+    #[serde(rename = "event_ended")]
+    EventEnded(EventEndedUpdate),
 }

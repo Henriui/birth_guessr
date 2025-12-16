@@ -28,7 +28,8 @@ mod utils;
 
 use handlers::{
     claim_event, create_event, delete_event, get_event_by_key, get_event_guesses, health,
-    sse_subscribe, submit_guess, update_event_settings, update_guess,
+    delete_guess, set_event_answer, sse_subscribe, submit_guess, update_event_settings,
+    update_guess,
 };
 use types::AppState;
 
@@ -119,12 +120,13 @@ async fn main() {
         )
         .route(
             "/api/events/{id}/guesses/{invitee_id}",
-            axum::routing::put(update_guess),
+            axum::routing::put(update_guess).delete(delete_guess),
         )
         .route(
             "/api/events/{id}/settings",
             axum::routing::put(update_event_settings),
         )
+        .route("/api/events/{id}/answer", post(set_event_answer))
         .route("/api/events/{id}/live", get(sse_subscribe))
         .fallback_service(
             ServeDir::new("public").not_found_service(ServeFile::new("public/index.html")),

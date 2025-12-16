@@ -37,11 +37,15 @@
     "alert_past_date": "Can't wager a date in the past! 🕰️",
     "alert_date_limit": "Date can't be more than 1 month after due date! 📅",
     "alert_submit_fail": "Failed to submit guess",
-    "already_guessed": "You have already guessed! 🎉"
+    "already_guessed": "You have already guessed! 🎉",
+    "game_ended": "The game has ended. Thanks for playing!"
   },
   "guess_list": {
     "title": "Recent Guesses",
     "edit": "Edit",
+    "delete": "Delete",
+    "delete_confirm": "Delete this guess?",
+    "delete_failed": "Failed to delete guess",
     "guess_summary": "{{weight}}kg on {{date}}"
   },
   "guess_edit": {
@@ -55,7 +59,11 @@
     "loading": "Loading...",
     "chart_title": "Guesses Graph 📊",
     "alert_load_fail": "Could not load event",
-    "error_not_found": "Event not found"
+    "error_not_found": "Event not found",
+    "game_ended_title": "Baby is here! 🎉",
+    "correct_answer": "Correct answer: {{date}} — {{weight}} kg",
+    "winner_correct_date": "Closest date (Top 5)",
+    "winner_closest_weight": "Closest weight (Top 5)"
   },
   "cookie_banner": {
     "message": "By using our site, you agree to our Terms of Service and use of essential cookies.",
@@ -92,7 +100,14 @@
     "field_secret_key": "Secret Key",
     "delete_success": "Event deleted",
     "delete_fail": "Failed to delete event. Check your key.",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "set_answer": "Set Birth Answer",
+    "set_answer_title": "Complete Game",
+    "set_answer_desc": "Enter the baby's birth date and weight to end the game and announce winners.",
+    "field_birth_date": "Birth Date",
+    "field_birth_weight": "Birth Weight (kg)",
+    "set_answer_confirm": "End Game",
+    "set_answer_failed": "Failed to end game. Check values and your secret key."
   },
   "terms": {
     "title": "Terms of Service",

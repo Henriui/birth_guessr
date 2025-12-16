@@ -7,6 +7,9 @@ export interface EventData {
   min_weight_kg?: number;
   max_weight_kg?: number;
   allow_guess_edits?: boolean;
+  birth_date?: string;
+  birth_weight_kg?: number;
+  ended_at?: string;
 }
 
 export interface Guess {

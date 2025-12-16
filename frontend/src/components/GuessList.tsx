@@ -1,16 +1,18 @@
 import { Avatar, Card, CardContent, IconButton, List, ListItem, ListItemAvatar, ListItemText, Typography } from '@mui/material';
 import type { Guess } from './types';
 import { useTranslation } from 'react-i18next';
-import { Edit } from '@mui/icons-material';
+import { Delete, Edit } from '@mui/icons-material';
 
 interface GuessListProps {
   guesses: Guess[];
   myInviteeId?: string | null;
   allowGuessEdits?: boolean;
   onEditGuess?: (guess: Guess) => void;
+  isAdmin?: boolean;
+  onDeleteGuess?: (guess: Guess) => void;
 }
 
-export function GuessList({ guesses, myInviteeId, allowGuessEdits, onEditGuess }: GuessListProps) {
+export function GuessList({ guesses, myInviteeId, allowGuessEdits, onEditGuess, isAdmin, onDeleteGuess }: GuessListProps) {
   const { t, i18n } = useTranslation();
 
   return (
@@ -24,11 +26,18 @@ export function GuessList({ guesses, myInviteeId, allowGuessEdits, onEditGuess }
             <ListItem
               key={i}
               secondaryAction={
-                allowGuessEdits && myInviteeId && onEditGuess && g.invitee_id === myInviteeId ? (
-                  <IconButton edge="end" aria-label={t('guess_list.edit')} onClick={() => onEditGuess(g)}>
-                    <Edit fontSize="small" />
-                  </IconButton>
-                ) : null
+                <>
+                  {allowGuessEdits && myInviteeId && onEditGuess && g.invitee_id === myInviteeId ? (
+                    <IconButton edge="end" aria-label={t('guess_list.edit')} onClick={() => onEditGuess(g)}>
+                      <Edit fontSize="small" />
+                    </IconButton>
+                  ) : null}
+                  {isAdmin && onDeleteGuess ? (
+                    <IconButton edge="end" aria-label={t('guess_list.delete')} onClick={() => onDeleteGuess(g)}>
+                      <Delete fontSize="small" />
+                    </IconButton>
+                  ) : null}
+                </>
               }
             >
               <ListItemAvatar>

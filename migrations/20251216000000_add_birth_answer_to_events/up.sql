@@ -1,0 +1,4 @@
+ALTER TABLE events
+ADD COLUMN birth_date TIMESTAMP,
+ADD COLUMN birth_weight_kg DOUBLE PRECISION,
+ADD COLUMN ended_at TIMESTAMP;

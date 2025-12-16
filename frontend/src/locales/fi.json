@@ -37,11 +37,15 @@
     "alert_past_date": "Et voi veikata mennyttä päivämäärää! 🕰️",
     "alert_date_limit": "Päivämäärä ei voi olla yli kuukautta lasketun ajan jälkeen! 📅",
     "alert_submit_fail": "Arvauksen lähetys epäonnistui",
-    "already_guessed": "Olet jo arvannut! 🎉"
+    "already_guessed": "Olet jo arvannut! 🎉",
+    "game_ended": "Peli on päättynyt. Kiitos pelaamisesta!"
   },
   "guess_list": {
     "title": "Viimeisimmät Arvaukset",
     "edit": "Muokkaa",
+    "delete": "Poista",
+    "delete_confirm": "Poistetaanko tämä arvaus?",
+    "delete_failed": "Arvauksen poistaminen epäonnistui",
     "guess_summary": "{{weight}}kg - {{date}}"
   },
   "guess_edit": {
@@ -55,7 +59,11 @@
     "loading": "Ladataan...",
     "chart_title": "Arvauskäyrä 📊",
     "alert_load_fail": "Tapahtumaa ei voitu ladata",
-    "error_not_found": "Tapahtumaa ei löytynyt"
+    "error_not_found": "Tapahtumaa ei löytynyt",
+    "game_ended_title": "Vauva on syntynyt! 🎉",
+    "correct_answer": "Oikea vastaus: {{date}} — {{weight}} kg",
+    "winner_correct_date": "Lähin päivämäärä (Top 5)",
+    "winner_closest_weight": "Lähin paino (Top 5)"
   },
   "cookie_banner": {
     "message": "Käyttämällä sivustoa hyväksyt käyttöehdot ja välttämättömien evästeiden käytön.",
@@ -92,7 +100,14 @@
     "field_secret_key": "Salainen avain",
     "delete_success": "Tapahtuma poistettu",
     "delete_fail": "Poisto epäonnistui. Tarkista avain.",
-    "cancel": "Peruuta"
+    "cancel": "Peruuta",
+    "set_answer": "Syötä oikea vastaus",
+    "set_answer_title": "Päätä peli",
+    "set_answer_desc": "Syötä vauvan syntymäpäivä ja paino päättääksesi pelin ja julkistaaksesi voittajat.",
+    "field_birth_date": "Syntymäpäivä",
+    "field_birth_weight": "Syntymäpaino (kg)",
+    "set_answer_confirm": "Päätä peli",
+    "set_answer_failed": "Pelin päättäminen epäonnistui. Tarkista arvot ja salainen avain."
   },
   "terms": {
     "title": "Käyttöehdot",

@@ -12,8 +12,8 @@ use uuid::Uuid;
 
 use crate::{
     models::{
-        Event, EventWithSecret, GraphPoint, Guess, GuessUpdate, Invitee, LiveUpdate, NewEvent,
-        NewGuess, NewInvitee,
+        Event, EventEndedUpdate, EventWithSecret, GraphPoint, Guess, GuessDeletedUpdate,
+        GuessUpdate, Invitee, LiveUpdate, NewEvent, NewGuess, NewInvitee,
     },
     schema::events,
     types::AppState,
@@ -241,6 +241,10 @@ pub async fn submit_guess(
         .first::<Event>(&mut conn)
         .map_err(|_| StatusCode::NOT_FOUND)?;
 
+    if event.ended_at.is_some() {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
     if !payload.guessed_weight_kg.is_finite()
         || payload.guessed_weight_kg < event.min_weight_kg
         || payload.guessed_weight_kg > event.max_weight_kg
@@ -403,6 +407,57 @@ pub async fn update_guess(
 }
 
 #[derive(Deserialize)]
+pub struct DeleteGuessRequest {
+    pub secret_key: String,
+}
+
+pub async fn delete_guess(
+    State(state): State<AppState>,
+    Path((event_id_param, invitee_id_param)): Path<(Uuid, Uuid)>,
+    Json(payload): Json<DeleteGuessRequest>,
+) -> Result<StatusCode, StatusCode> {
+    use crate::schema::{events, invitees};
+
+    let mut conn = state
+        .pool
+        .get()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let event = events::table
+        .find(event_id_param)
+        .first::<Event>(&mut conn)
+        .map_err(|_| StatusCode::NOT_FOUND)?;
+
+    if event.ended_at.is_some() {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    if event.secret_key != payload.secret_key {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    let target_invitee = invitees::table
+        .find(invitee_id_param)
+        .first::<Invitee>(&mut conn)
+        .map_err(|_| StatusCode::NOT_FOUND)?;
+
+    if target_invitee.event_id != event_id_param {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    diesel::delete(invitees::table.find(invitee_id_param))
+        .execute(&mut conn)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let _ = state.tx.send(LiveUpdate::GuessDeleted(GuessDeletedUpdate {
+        event_id: event_id_param,
+        invitee_id: invitee_id_param,
+    }));
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Deserialize)]
 pub struct UpdateEventSettingsRequest {
     pub secret_key: String,
     pub allow_guess_edits: bool,
@@ -472,6 +527,144 @@ pub async fn claim_event(
     Ok(Json(target_event))
 }
 
+#[derive(Deserialize)]
+pub struct SetEventAnswerRequest {
+    pub secret_key: String,
+    pub birth_date: chrono::NaiveDateTime,
+    pub birth_weight_kg: f64,
+}
+
+pub async fn set_event_answer(
+    State(state): State<AppState>,
+    Path(event_id_param): Path<Uuid>,
+    Json(payload): Json<SetEventAnswerRequest>,
+) -> Result<Json<EventEndedUpdate>, StatusCode> {
+    use crate::schema::{events, guesses, invitees};
+
+    if !payload.birth_weight_kg.is_finite() {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    let mut conn = state
+        .pool
+        .get()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let now = chrono::Utc::now().naive_utc();
+
+    let target_event = events::table
+        .find(event_id_param)
+        .first::<Event>(&mut conn)
+        .map_err(|_| StatusCode::NOT_FOUND)?;
+
+    if target_event.secret_key != payload.secret_key {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    if target_event.ended_at.is_some() {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    let updated_event = diesel::update(events::table.find(event_id_param))
+        .set((
+            events::birth_date.eq(Some(payload.birth_date)),
+            events::birth_weight_kg.eq(Some(payload.birth_weight_kg)),
+            events::ended_at.eq(Some(now)),
+            events::allow_guess_edits.eq(false),
+        ))
+        .returning(Event::as_returning())
+        .get_result::<Event>(&mut conn)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let guess_rows = invitees::table
+        .inner_join(guesses::table)
+        .filter(invitees::event_id.eq(event_id_param))
+        .select((
+            invitees::id,
+            invitees::display_name,
+            invitees::color_hex,
+            guesses::guessed_date,
+            guesses::guessed_weight_kg,
+            guesses::created_at,
+        ))
+        .load::<(Uuid, String, String, chrono::NaiveDateTime, f64, chrono::NaiveDateTime)>(
+            &mut conn,
+        )
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let mut date_sorted: Vec<(GraphPoint, i64, chrono::NaiveDateTime)> = guess_rows
+        .iter()
+        .map(|(invitee_id, name, color, date, weight, created)| {
+            let date_diff_days = (*date - payload.birth_date).num_days().abs();
+            (
+                GraphPoint {
+                    invitee_id: *invitee_id,
+                    display_name: name.clone(),
+                    color_hex: color.clone(),
+                    guessed_date: *date,
+                    guessed_weight_kg: *weight,
+                },
+                date_diff_days,
+                *created,
+            )
+        })
+        .collect();
+
+    date_sorted.sort_by(|(_, days_a, created_a), (_, days_b, created_b)| {
+        days_a.cmp(days_b).then_with(|| created_a.cmp(created_b))
+    });
+
+    let closest_date_top: Vec<GraphPoint> = date_sorted
+        .into_iter()
+        .take(5)
+        .map(|(gp, _, _)| gp)
+        .collect();
+
+    let mut weight_sorted: Vec<(GraphPoint, f64, chrono::NaiveDateTime)> = guess_rows
+        .iter()
+        .map(|(invitee_id, name, color, date, weight, created)| {
+            let diff = (*weight - payload.birth_weight_kg).abs();
+            (
+                GraphPoint {
+                    invitee_id: *invitee_id,
+                    display_name: name.clone(),
+                    color_hex: color.clone(),
+                    guessed_date: *date,
+                    guessed_weight_kg: *weight,
+                },
+                diff,
+                *created,
+            )
+        })
+        .collect();
+
+    weight_sorted.sort_by(|(_, diff_a, created_a), (_, diff_b, created_b)| {
+        diff_a
+            .partial_cmp(diff_b)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| created_a.cmp(created_b))
+    });
+
+    let closest_weight_top: Vec<GraphPoint> = weight_sorted
+        .into_iter()
+        .take(5)
+        .map(|(gp, _, _)| gp)
+        .collect();
+
+    let update = EventEndedUpdate {
+        event_id: event_id_param,
+        birth_date: payload.birth_date,
+        birth_weight_kg: payload.birth_weight_kg,
+        ended_at: updated_event.ended_at.unwrap_or(now),
+        closest_date_top,
+        closest_weight_top,
+    };
+
+    let _ = state.tx.send(LiveUpdate::EventEnded(update.clone()));
+
+    Ok(Json(update))
+}
+
 pub async fn sse_subscribe(
     Path(event_id_param): Path<Uuid>,
     State(state): State<AppState>,
@@ -482,7 +675,9 @@ pub async fn sse_subscribe(
         Ok(update) => {
             let matches_event = match &update {
                 LiveUpdate::Guess(g) => g.event_id == event_id_param,
+                LiveUpdate::GuessDeleted(g) => g.event_id == event_id_param,
                 LiveUpdate::EventSettings { event_id, .. } => *event_id == event_id_param,
+                LiveUpdate::EventEnded(e) => e.event_id == event_id_param,
             };
 
             if !matches_event {

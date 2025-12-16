@@ -33,6 +33,8 @@ export function GuessForm({ event }: GuessFormProps) {
   const alreadyGuessed =
     submitted || (event?.id ? Boolean(localStorage.getItem(`guess_token_${event.id}`)) : false);
 
+  const hasEnded = Boolean(event.ended_at);
+
   const minWeightKg = typeof event.min_weight_kg === 'number' ? event.min_weight_kg : 1.8;
   const maxWeightKg = typeof event.max_weight_kg === 'number' ? event.max_weight_kg : 5.2;
 
@@ -105,6 +107,18 @@ export function GuessForm({ event }: GuessFormProps) {
         <CardContent sx={{ textAlign: 'center', py: 4 }}>
           <Typography variant="h6" color="primary" gutterBottom>
             {t('guess_form.already_guessed')}
+          </Typography>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (hasEnded) {
+    return (
+      <Card sx={{ borderRadius: 4 }}>
+        <CardContent sx={{ textAlign: 'center', py: 4 }}>
+          <Typography variant="h6" color="primary" gutterBottom>
+            {t('guess_form.game_ended')}
           </Typography>
         </CardContent>
       </Card>

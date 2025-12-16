@@ -10,10 +10,19 @@ import type { ChartPoint, EventData, Guess } from './types';
 import { useTranslation } from 'react-i18next';
 import dayjs, { Dayjs } from 'dayjs';
 
+interface EventEndedAnnouncement {
+  event_id: string;
+  birth_date: string;
+  birth_weight_kg: number;
+  ended_at: string;
+  closest_date_top: Guess[];
+  closest_weight_top: Guess[];
+}
+
 export default function EventPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const eventKey = searchParams.get('key');
   
   const [event, setEvent] = useState<EventData | null>(null);
@@ -31,6 +40,12 @@ export default function EventPage() {
   const [editDate, setEditDate] = useState<Dayjs | null>(null);
   const [editColor, setEditColor] = useState('#000000');
   const [editError, setEditError] = useState<string | null>(null);
+
+  const [answerDialogOpen, setAnswerDialogOpen] = useState(false);
+  const [answerBirthDate, setAnswerBirthDate] = useState<Dayjs | null>(null);
+  const [answerBirthWeight, setAnswerBirthWeight] = useState('');
+  const [answerError, setAnswerError] = useState<string | null>(null);
+  const [endedAnnouncement, setEndedAnnouncement] = useState<EventEndedAnnouncement | null>(null);
 
   useEffect(() => {
     if (!eventKey) {
@@ -81,12 +96,32 @@ export default function EventPage() {
             return;
           }
 
+          if (parsed?.type === 'guess_deleted' && parsed?.data?.invitee_id) {
+            const inviteeId: string = parsed.data.invitee_id;
+            setGuesses((prev) => prev.filter((g) => g.invitee_id !== inviteeId));
+            return;
+          }
+
           if (parsed?.type === 'event_settings' && parsed?.data) {
             setEvent((prev) => {
               if (!prev) return prev;
               return {
                 ...prev,
                 allow_guess_edits: Boolean(parsed.data.allow_guess_edits),
+              };
+            });
+          }
+
+          if (parsed?.type === 'event_ended' && parsed?.data) {
+            setEndedAnnouncement(parsed.data as EventEndedAnnouncement);
+            setEvent((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                birth_date: parsed.data.birth_date,
+                birth_weight_kg: parsed.data.birth_weight_kg,
+                ended_at: parsed.data.ended_at,
+                allow_guess_edits: false,
               };
             });
           }
@@ -118,6 +153,7 @@ export default function EventPage() {
   const myAdminKey = event?.id ? localStorage.getItem(`event_admin_key_${event.id}`) : null;
   const isClaimedAdmin = Boolean(myAdminKey);
   const allowGuessEdits = Boolean(event?.allow_guess_edits);
+  const hasEnded = Boolean(event?.ended_at);
 
   const uniqueGuesses = useMemo(() => {
     const seen = new Set<string>();
@@ -278,6 +314,7 @@ export default function EventPage() {
   const handleToggleGuessEdits = async (enabled: boolean) => {
     if (!event) return;
     if (!myAdminKey) return;
+    if (hasEnded) return;
     try {
       const res = await fetch(`/api/events/${event.id}/settings`, {
         method: 'PUT',
@@ -313,7 +350,126 @@ export default function EventPage() {
       }
   };
 
+  const handleAdminDeleteGuess = async (g: Guess) => {
+    if (!event) return;
+    if (!myAdminKey) return;
+    if (hasEnded) return;
+
+    const ok = window.confirm(t('guess_list.delete_confirm'));
+    if (!ok) return;
+
+    try {
+      const res = await fetch(`/api/events/${event.id}/guesses/${g.invitee_id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret_key: myAdminKey }),
+      });
+
+      if (!res.ok) {
+        alert(t('guess_list.delete_failed'));
+        return;
+      }
+
+      setGuesses((prev) => prev.filter((x) => x.invitee_id !== g.invitee_id));
+    } catch (err) {
+      console.error(err);
+      alert(t('guess_list.delete_failed'));
+    }
+  };
+
+  const handleAnswerOpen = () => {
+    setAnswerError(null);
+    setAnswerBirthDate(null);
+    setAnswerBirthWeight('');
+    setAnswerDialogOpen(true);
+  };
+
+  const handleAnswerConfirm = async () => {
+    if (!event) return;
+    if (!myAdminKey) return;
+    if (hasEnded) return;
+
+    if (!answerBirthDate) {
+      setAnswerError(t('admin.set_answer_failed'));
+      return;
+    }
+
+    const w = parseFloat(answerBirthWeight);
+    if (Number.isNaN(w) || !Number.isFinite(w)) {
+      setAnswerError(t('admin.set_answer_failed'));
+      return;
+    }
+
+    try {
+      const formattedDate = answerBirthDate.format('YYYY-MM-DD') + 'T12:00:00';
+      const res = await fetch(`/api/events/${event.id}/answer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          secret_key: myAdminKey,
+          birth_date: formattedDate,
+          birth_weight_kg: w,
+        }),
+      });
+
+      if (!res.ok) {
+        setAnswerError(t('admin.set_answer_failed'));
+        return;
+      }
+
+      const data = (await res.json()) as EventEndedAnnouncement;
+      setEndedAnnouncement(data);
+      setEvent((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          birth_date: data.birth_date,
+          birth_weight_kg: data.birth_weight_kg,
+          ended_at: data.ended_at,
+          allow_guess_edits: false,
+        };
+      });
+      setAnswerDialogOpen(false);
+    } catch (err) {
+      console.error(err);
+      setAnswerError(t('admin.set_answer_failed'));
+    }
+  };
+
   if (!event) return <Typography p={4}>{t('event_page.loading')}</Typography>;
+
+  const computedClosestDateTop = (() => {
+    if (!event.birth_date) return [] as Guess[];
+    const birth = dayjs(event.birth_date);
+
+    return [...uniqueGuesses]
+      .map((g) => ({
+        g,
+        days: Math.abs(dayjs(g.guessed_date).diff(birth, 'day')),
+      }))
+      .sort((a, b) => a.days - b.days)
+      .slice(0, 5)
+      .map((x) => x.g);
+  })();
+
+  const computedClosestWeightTop = (() => {
+    if (typeof event.birth_weight_kg !== 'number') return [] as Guess[];
+    const target = event.birth_weight_kg;
+    return [...uniqueGuesses]
+      .map((g) => ({ g, diff: Math.abs(g.guessed_weight_kg - target) }))
+      .sort((a, b) => a.diff - b.diff)
+      .slice(0, 5)
+      .map((x) => x.g);
+  })();
+
+  const closestDateTop = endedAnnouncement?.closest_date_top ?? [];
+  const closestWeightTop = endedAnnouncement?.closest_weight_top ?? [];
+
+  const formatGuessSummary = (g: Guess) => {
+    const date = new Date(g.guessed_date).toLocaleDateString(i18n.language);
+    const weight = Number(g.guessed_weight_kg).toFixed(2);
+    return `${date} — ${weight} kg`;
+  };
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', pb: 8 }}>
@@ -332,7 +488,54 @@ export default function EventPage() {
           <Grid item xs={12} lg={4}>
             <Stack spacing={3}>
               <GuessForm event={event} />
-              <GuessList guesses={uniqueGuesses} myInviteeId={myInviteeId} allowGuessEdits={allowGuessEdits} onEditGuess={handleEditGuess} />
+              <GuessList
+                guesses={uniqueGuesses}
+                myInviteeId={myInviteeId}
+                allowGuessEdits={allowGuessEdits}
+                onEditGuess={handleEditGuess}
+                isAdmin={isClaimedAdmin && !hasEnded}
+                onDeleteGuess={handleAdminDeleteGuess}
+              />
+              {hasEnded && (
+                <Paper sx={{ p: 2, borderRadius: 4 }}>
+                  <Typography variant="h6" gutterBottom>
+                    {t('event_page.game_ended_title')}
+                  </Typography>
+
+                  <Typography variant="body2" gutterBottom>
+                    {t('event_page.correct_answer', {
+                      date: event.birth_date ? dayjs(event.birth_date).format('YYYY-MM-DD') : '-',
+                      weight: typeof event.birth_weight_kg === 'number' ? event.birth_weight_kg.toFixed(2) : '-',
+                    })}
+                  </Typography>
+
+                  <Typography variant="subtitle1" gutterBottom>
+                    {t('event_page.winner_correct_date')}
+                  </Typography>
+                  {(closestDateTop.length ? closestDateTop : computedClosestDateTop).length ? (
+                    (closestDateTop.length ? closestDateTop : computedClosestDateTop).map((w: Guess, idx: number) => (
+                      <Typography key={w.invitee_id} variant="body2">
+                        {idx + 1}. {w.display_name} — {formatGuessSummary(w)}
+                      </Typography>
+                    ))
+                  ) : (
+                    <Typography variant="body2">-</Typography>
+                  )}
+
+                  <Typography variant="subtitle1" gutterBottom mt={2}>
+                    {t('event_page.winner_closest_weight')}
+                  </Typography>
+                  {(closestWeightTop.length ? closestWeightTop : computedClosestWeightTop).length ? (
+                    (closestWeightTop.length ? closestWeightTop : computedClosestWeightTop).map((g: Guess, idx: number) => (
+                      <Typography key={g.invitee_id} variant="body2">
+                        {idx + 1}. {g.display_name} — {formatGuessSummary(g)}
+                      </Typography>
+                    ))
+                  ) : (
+                    <Typography variant="body2">-</Typography>
+                  )}
+                </Paper>
+              )}
             </Stack>
           </Grid>
         </Grid>
@@ -354,6 +557,11 @@ export default function EventPage() {
                   }
                   label={t('admin.allow_guess_edits')}
                 />
+                {!hasEnded && (
+                  <Button variant="outlined" onClick={handleAnswerOpen}>
+                    {t('admin.set_answer')}
+                  </Button>
+                )}
                 <Button color="error" variant="outlined" onClick={handleDeleteClick}>
                   {t('admin.delete_event')}
                 </Button>
@@ -480,6 +688,51 @@ export default function EventPage() {
           </Button>
           <Button onClick={handleEditSave} variant="contained">
             {t('guess_edit.save')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={answerDialogOpen} onClose={() => setAnswerDialogOpen(false)}>
+        <DialogTitle>{t('admin.set_answer_title')}</DialogTitle>
+        <DialogContent>
+          <DialogContentText mb={2}>{t('admin.set_answer_desc')}</DialogContentText>
+          <Stack spacing={2} mt={1}>
+            <DatePicker
+              label={t('admin.field_birth_date')}
+              value={answerBirthDate}
+              onChange={(newValue) => {
+                setAnswerBirthDate(newValue);
+                if (answerError) setAnswerError(null);
+              }}
+              slotProps={{
+                textField: { size: 'small', error: Boolean(answerError) },
+              }}
+            />
+            <TextField
+              label={t('admin.field_birth_weight')}
+              type="number"
+              value={answerBirthWeight}
+              onChange={(e) => {
+                setAnswerBirthWeight(e.target.value);
+                if (answerError) setAnswerError(null);
+              }}
+              size="small"
+              inputProps={{ step: 0.01 }}
+              error={Boolean(answerError)}
+            />
+            {answerError && (
+              <Typography variant="body2" color="error">
+                {answerError}
+              </Typography>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAnswerDialogOpen(false)} color="inherit">
+            {t('admin.cancel')}
+          </Button>
+          <Button onClick={handleAnswerConfirm} variant="contained">
+            {t('admin.set_answer_confirm')}
           </Button>
         </DialogActions>
       </Dialog>

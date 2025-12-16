@@ -13,6 +13,9 @@ diesel::table! {
         min_weight_kg -> Float8,
         max_weight_kg -> Float8,
         allow_guess_edits -> Bool,
+        birth_date -> Nullable<Timestamp>,
+        birth_weight_kg -> Nullable<Float8>,
+        ended_at -> Nullable<Timestamp>,
     }
 }
 
