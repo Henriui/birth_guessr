@@ -14,6 +14,7 @@ export function GuessForm({ event }: GuessFormProps) {
   const [name, setName] = useState('');
   const [weight, setWeight] = useState('');
   const [guessDate, setGuessDate] = useState<Dayjs | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [color, setColor] = useState(() => {
     const bytes = new Uint8Array(3);
     if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
@@ -32,30 +33,29 @@ export function GuessForm({ event }: GuessFormProps) {
   const alreadyGuessed =
     submitted || (event?.id ? Boolean(localStorage.getItem(`guess_token_${event.id}`)) : false);
 
+  const minWeightKg = typeof event.min_weight_kg === 'number' ? event.min_weight_kg : 1.8;
+  const maxWeightKg = typeof event.max_weight_kg === 'number' ? event.max_weight_kg : 5.2;
+
   const handleSubmit = async () => {
     if (!event) return;
     if (!guessDate) return;
 
     const w = parseFloat(weight);
 
-    if (isNaN(w) || w <= 1 || w >= 10) {
-      alert(t('guess_form.alert_weight_range'));
+    if (isNaN(w) || w < minWeightKg || w > maxWeightKg) {
+      setError(t('guess_form.alert_weight_range'));
       return;
     }
 
-    if (w > 5) {
-      if (!window.confirm(t('guess_form.alert_chonker'))) return;
-    }
-
     if (guessDate.isBefore(dayjs(), 'day')) {
-      alert(t('guess_form.alert_past_date'));
+      setError(t('guess_form.alert_past_date'));
       return;
     }
 
     if (event.due_date) {
       const maxDate = dayjs(event.due_date).add(1, 'month');
       if (guessDate.isAfter(maxDate)) {
-        alert(t('guess_form.alert_date_limit'));
+        setError(t('guess_form.alert_date_limit'));
         return;
       }
     }
@@ -82,16 +82,18 @@ export function GuessForm({ event }: GuessFormProps) {
             localStorage.setItem(`guess_token_${event.id}`, invitee.id);
             setSubmitted(true);
         }
+
+        setError(null);
         
         setName('');
         setWeight('');
         setGuessDate(null);
       } else {
-        alert(t('guess_form.alert_submit_fail'));
+        setError(t('guess_form.alert_submit_fail'));
       }
     } catch (err) {
       console.error(err);
-      alert(t('guess_form.alert_submit_fail'));
+      setError(t('guess_form.alert_submit_fail'));
     }
   };
 
@@ -110,7 +112,13 @@ export function GuessForm({ event }: GuessFormProps) {
   }
 
   return (
-    <Card sx={{ borderRadius: 4 }}>
+    <Card
+      sx={{
+        borderRadius: 4,
+        border: error ? '1px solid' : undefined,
+        borderColor: error ? 'error.main' : undefined,
+      }}
+    >
       <CardContent>
         <Typography variant="h6" gutterBottom>
           {t('guess_form.title')}
@@ -120,33 +128,54 @@ export function GuessForm({ event }: GuessFormProps) {
             label={t('guess_form.field_name')}
             size="small"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value);
+              if (error) setError(null);
+            }}
+            error={Boolean(error)}
           />
           <Stack direction="row" spacing={2}>
             <DatePicker
               label={t('guess_form.field_date')}
               value={guessDate}
-              onChange={(newValue) => setGuessDate(newValue)}
-              slotProps={{ textField: { size: 'small' } }}
+              onChange={(newValue) => {
+                setGuessDate(newValue);
+                if (error) setError(null);
+              }}
+              slotProps={{
+                textField: { size: 'small', error: Boolean(error) },
+              }}
             />
           </Stack>
           <TextField
             label={t('guess_form.field_weight')}
             type="number"
-            inputProps={{ step: 0.01 }}
+            inputProps={{ step: 0.01, min: minWeightKg, max: maxWeightKg }}
             size="small"
             value={weight}
-            onChange={(e) => setWeight(e.target.value)}
+            onChange={(e) => {
+              setWeight(e.target.value);
+              if (error) setError(null);
+            }}
+            error={Boolean(error)}
           />
           <Box>
             <Typography variant="caption">{t('guess_form.field_color')}</Typography>
             <input
               type="color"
               value={color}
-              onChange={(e) => setColor(e.target.value)}
+              onChange={(e) => {
+                setColor(e.target.value);
+                if (error) setError(null);
+              }}
               style={{ width: '100%', height: 40, cursor: 'pointer', border: 'none' }}
             />
           </Box>
+          {error && (
+            <Typography variant="body2" color="error">
+              {error}
+            </Typography>
+          )}
           <Button variant="contained" onClick={handleSubmit} disabled={isDisabled}>
             {t('guess_form.button_submit')}
           </Button>

@@ -66,6 +66,8 @@ pub struct CreateEventRequest {
     pub due_date: Option<chrono::NaiveDateTime>,
     pub guess_close_date: Option<chrono::NaiveDateTime>,
     pub turnstile_token: String,
+    pub min_weight_kg: Option<f64>,
+    pub max_weight_kg: Option<f64>,
 }
 
 #[derive(Deserialize)]
@@ -77,6 +79,11 @@ pub async fn create_event(
     State(state): State<AppState>,
     Json(payload): Json<CreateEventRequest>,
 ) -> Result<Json<EventWithSecret>, StatusCode> {
+    const DEFAULT_MIN_WEIGHT_KG: f64 = 1.8;
+    const DEFAULT_MAX_WEIGHT_KG: f64 = 5.2;
+    const HARD_MIN_WEIGHT_KG: f64 = 1.0;
+    const HARD_MAX_WEIGHT_KG: f64 = 8.0;
+
     // Verify Turnstile Token
     let secret =
         std::env::var("TURNSTILE_SECRET_KEY").map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
@@ -106,6 +113,20 @@ pub async fn create_event(
     let event_key = generate_event_key();
     let secret_key = generate_secret_key();
 
+    let mut min_weight_kg = payload.min_weight_kg.unwrap_or(DEFAULT_MIN_WEIGHT_KG);
+    let mut max_weight_kg = payload.max_weight_kg.unwrap_or(DEFAULT_MAX_WEIGHT_KG);
+
+    if !min_weight_kg.is_finite() || !max_weight_kg.is_finite() {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    min_weight_kg = min_weight_kg.clamp(HARD_MIN_WEIGHT_KG, HARD_MAX_WEIGHT_KG);
+    max_weight_kg = max_weight_kg.clamp(HARD_MIN_WEIGHT_KG, HARD_MAX_WEIGHT_KG);
+
+    if max_weight_kg <= min_weight_kg {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
     let new_event = NewEvent {
         title: &payload.title,
         description: payload.description.as_deref(),
@@ -113,6 +134,8 @@ pub async fn create_event(
         guess_close_date: payload.guess_close_date,
         event_key: &event_key,
         secret_key: &secret_key,
+        min_weight_kg,
+        max_weight_kg,
     };
 
     let mut conn = state
@@ -212,6 +235,13 @@ pub async fn submit_guess(
         .find(event_id_param)
         .first::<Event>(&mut conn)
         .map_err(|_| StatusCode::NOT_FOUND)?;
+
+    if !payload.guessed_weight_kg.is_finite()
+        || payload.guessed_weight_kg < event.min_weight_kg
+        || payload.guessed_weight_kg > event.max_weight_kg
+    {
+        return Err(StatusCode::BAD_REQUEST);
+    }
 
     let now = chrono::Utc::now().naive_utc();
     let close_date = event.guess_close_date.or(event.due_date);

@@ -15,6 +15,8 @@ import type { ChartPoint } from './types';
 
 interface GuessesChartProps {
   data: ChartPoint[];
+  minY?: number;
+  maxY?: number;
 }
 
 const CustomTooltip = ({ active, payload }: TooltipProps<number, number>) => {
@@ -22,7 +24,7 @@ const CustomTooltip = ({ active, payload }: TooltipProps<number, number>) => {
 
   const hoveredPoint = payload[0].payload as ChartPoint;
   const points = hoveredPoint.subPoints || [
-    { name: hoveredPoint.name, color: hoveredPoint.color },
+    { name: hoveredPoint.name, color: hoveredPoint.color, weightKg: hoveredPoint.y },
   ];
 
   const dateLabel = new Date(hoveredPoint.x).toLocaleDateString();
@@ -48,7 +50,7 @@ const CustomTooltip = ({ active, payload }: TooltipProps<number, number>) => {
           />
           <Typography variant="body2">{pt.name}</Typography>
           <Typography variant="body2" color="text.secondary">
-            {hoveredPoint.y} kg
+            {pt.weightKg} kg
           </Typography>
         </Box>
       ))}
@@ -95,7 +97,17 @@ const AnimatedPoint = (props: {
   );
 };
 
-export function GuessesChart({ data }: GuessesChartProps) {
+export function GuessesChart({ data, minY, maxY }: GuessesChartProps) {
+  const fallbackMin = 1.8;
+  const fallbackMax = 5.2;
+
+  const domainMin = typeof minY === 'number' ? minY : fallbackMin;
+  const domainMax = typeof maxY === 'number' ? maxY : fallbackMax;
+
+  // Add a little padding so points don't sit right on the edges.
+  const paddedMin = domainMin - 0.05;
+  const paddedMax = domainMax + 0.05;
+
   return (
     <ResponsiveContainer width="100%" height="100%">
       <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
@@ -107,7 +119,7 @@ export function GuessesChart({ data }: GuessesChartProps) {
           domain={['auto', 'auto']}
           tickFormatter={(unixTime) => new Date(unixTime).toLocaleDateString()}
         />
-        <YAxis type="number" dataKey="y" name="Weight" unit="kg" domain={[0, 12]} />
+        <YAxis type="number" dataKey="y" name="Weight" unit="kg" domain={[paddedMin, paddedMax]} />
         <ZAxis type="number" dataKey="z" range={[50, 400]} name="Weight Size" />
         <Tooltip content={<CustomTooltip />} />
         <Scatter

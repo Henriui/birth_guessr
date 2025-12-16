@@ -55,6 +55,8 @@ pub struct Event {
     pub guess_close_date: Option<NaiveDateTime>,
     #[serde(skip_serializing)]
     pub secret_key: String,
+    pub min_weight_kg: f64,
+    pub max_weight_kg: f64,
 }
 
 #[derive(Serialize)]
@@ -73,6 +75,8 @@ pub struct NewEvent<'a> {
     pub guess_close_date: Option<NaiveDateTime>,
     pub event_key: &'a str,
     pub secret_key: &'a str,
+    pub min_weight_kg: f64,
+    pub max_weight_kg: f64,
 }
 
 #[derive(Serialize, Clone, Debug)]

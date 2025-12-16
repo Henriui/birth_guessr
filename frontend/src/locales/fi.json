@@ -12,6 +12,9 @@
     "advanced_options": "Lisäasetukset",
     "field_guess_close_date": "Arvaukset sallittu asti",
     "help_guess_close_date": "Oletuksena laskettuun aikaan saakka",
+    "field_min_weight": "Minimipaino (kg)",
+    "field_max_weight": "Maksimipaino (kg)",
+    "help_weight_range": "Oletuksena 1.8–5.2 kg (järkevä haarukka 1–8 kg)",
     "alert_create_fail": "Tapahtuman luonti epäonnistui",
     "alert_create_error": "Virhe tapahtuman luonnissa"
   },
@@ -28,7 +31,7 @@
     "field_weight": "Paino (kg)",
     "field_color": "Väri",
     "button_submit": "Lähetä Arvaus",
-    "alert_weight_range": "Painon täytyy olla 1kg ja 10kg välillä! ⚖️",
+    "alert_weight_range": "Paino ei ole tapahtuman salliman haarukan sisällä.",
     "alert_chonker": "Melkoinen jötkäle! Oletko varma? 🐘",
     "alert_past_date": "Et voi veikata mennyttä päivämäärää! 🕰️",
     "alert_date_limit": "Päivämäärä ei voi olla yli kuukautta lasketun ajan jälkeen! 📅",

@@ -10,6 +10,8 @@ diesel::table! {
         created_at -> Timestamp,
         guess_close_date -> Nullable<Timestamp>,
         secret_key -> Varchar,
+        min_weight_kg -> Float8,
+        max_weight_kg -> Float8,
     }
 }
 

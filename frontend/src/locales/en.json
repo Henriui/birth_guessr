@@ -12,6 +12,9 @@
     "advanced_options": "Advanced Options",
     "field_guess_close_date": "Guesses Allowed Until",
     "help_guess_close_date": "Defaults to Due Date if left empty",
+    "field_min_weight": "Min Weight (kg)",
+    "field_max_weight": "Max Weight (kg)",
+    "help_weight_range": "Defaults to 1.8–5.2 kg (reasonable range is 1–8 kg)",
     "alert_create_fail": "Failed to create event",
     "alert_create_error": "Error creating event"
   },
@@ -28,7 +31,7 @@
     "field_weight": "Weight (kg)",
     "field_color": "Color",
     "button_submit": "Submit Guess",
-    "alert_weight_range": "Weight must be between 1kg and 10kg! ⚖️",
+    "alert_weight_range": "Weight is outside the allowed range for this event.",
     "alert_chonker": "That's a chonker! Are you sure? 🐘",
     "alert_past_date": "Can't wager a date in the past! 🕰️",
     "alert_date_limit": "Date can't be more than 1 month after due date! 📅",

@@ -4,6 +4,8 @@ export interface EventData {
   description?: string;
   due_date?: string;
   event_key: string;
+  min_weight_kg?: number;
+  max_weight_kg?: number;
 }
 
 export interface Guess {
@@ -26,5 +28,5 @@ export interface ChartPoint {
   z: number;
   name: string;
   color: string;
-  subPoints?: { name: string; color: string }[];
+  subPoints?: { name: string; color: string; weightKg: number }[];
 }

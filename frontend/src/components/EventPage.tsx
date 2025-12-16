@@ -103,22 +103,29 @@ export default function EventPage() {
 
   // Chart Data Preparation
   const chartData: ChartPoint[] = useMemo(() => {
+    const WEIGHT_EPSILON_KG = 0.05;
+
     const groups = new Map<
       string,
-      { x: number; y: number; subPoints: { name: string; color: string }[] }
+      { x: number; y: number; subPoints: { name: string; color: string; weightKg: number }[] }
     >();
 
     uniqueGuesses.forEach((g) => {
       const x = new Date(g.guessed_date).getTime();
       const y = g.guessed_weight_kg;
-      const key = `${x}-${y}`;
+
+      // Bucket weights that are very close together so they don't visually hide each other.
+      // We use the same date (x) and a rounded weight bucket (yBucket) as the grouping key.
+      const yBucket = Math.round(y / WEIGHT_EPSILON_KG) * WEIGHT_EPSILON_KG;
+      const key = `${x}-${yBucket}`;
 
       if (!groups.has(key)) {
-        groups.set(key, { x, y, subPoints: [] });
+        groups.set(key, { x, y: yBucket, subPoints: [] });
       }
       groups.get(key)!.subPoints.push({
         name: g.display_name,
         color: g.color_hex,
+        weightKg: y,
       });
     });
 
@@ -171,7 +178,7 @@ export default function EventPage() {
           <Grid item xs={12} lg={8}>
             <Paper sx={{ p: 3, borderRadius: 4, height: 500 }}>
               <Typography variant="h6" gutterBottom>{t('event_page.chart_title')}</Typography>
-              <GuessesChart data={chartData} />
+              <GuessesChart data={chartData} minY={event.min_weight_kg} maxY={event.max_weight_kg} />
             </Paper>
           </Grid>
 

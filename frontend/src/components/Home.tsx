@@ -14,6 +14,8 @@ export default function Home() {
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState<Dayjs | null>(null);
   const [guessCloseDate, setGuessCloseDate] = useState<Dayjs | null>(null);
+  const [minWeightKg, setMinWeightKg] = useState('1.8');
+  const [maxWeightKg, setMaxWeightKg] = useState('5.2');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [joinKey, setJoinKey] = useState('');
   const [turnstileToken, setTurnstileToken] = useState('');
@@ -36,7 +38,9 @@ export default function Home() {
           description: description || null,
           due_date: formattedDate,
           guess_close_date: formattedCloseDate,
-          turnstile_token: turnstileToken
+          turnstile_token: turnstileToken,
+          min_weight_kg: minWeightKg ? parseFloat(minWeightKg) : null,
+          max_weight_kg: maxWeightKg ? parseFloat(maxWeightKg) : null,
         })
       });
       
@@ -121,6 +125,27 @@ export default function Home() {
                     minDate={dayjs()}
                     maxDate={dueDate || undefined}
                   />
+
+                <Stack direction="row" spacing={2} mt={2}>
+                  <TextField
+                    label={t('home.field_min_weight')}
+                    type="number"
+                    inputProps={{ step: 0.1, min: 1, max: 8 }}
+                    fullWidth
+                    value={minWeightKg}
+                    onChange={(e) => setMinWeightKg(e.target.value)}
+                    helperText={t('home.help_weight_range')}
+                  />
+                  <TextField
+                    label={t('home.field_max_weight')}
+                    type="number"
+                    inputProps={{ step: 0.1, min: 1, max: 8 }}
+                    fullWidth
+                    value={maxWeightKg}
+                    onChange={(e) => setMaxWeightKg(e.target.value)}
+                    helperText={t('home.help_weight_range')}
+                  />
+                </Stack>
             </Collapse>
           </Box>
 
