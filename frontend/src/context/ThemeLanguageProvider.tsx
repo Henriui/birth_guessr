@@ -6,11 +6,20 @@ import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 import 'dayjs/locale/fi';
 import 'dayjs/locale/en';
+import 'dayjs/locale/en-gb';
 
 import { ThemeLanguageContext } from './ThemeLanguageContext';
 
+const toDateLocale = (lang: string) => {
+  if (lang.toLowerCase().startsWith('fi')) return 'fi';
+  return 'en-gb';
+};
+
 export const ThemeLanguageProvider = ({ children }: { children: React.ReactNode }) => {
   const { i18n } = useTranslation();
+
+  const resolvedLanguage = i18n.resolvedLanguage || i18n.language;
+  const dateLocale = toDateLocale(resolvedLanguage);
 
   const [mode, setMode] = useState<PaletteMode>(() => {
     const savedMode = localStorage.getItem('themeMode');
@@ -27,13 +36,13 @@ export const ThemeLanguageProvider = ({ children }: { children: React.ReactNode 
 
   const changeLanguage = (lang: string) => {
     i18n.changeLanguage(lang);
-    dayjs.locale(lang);
+    dayjs.locale(toDateLocale(lang));
     localStorage.setItem('i18nextLng', lang);
   };
 
   useEffect(() => {
-    dayjs.locale(i18n.language);
-  }, [i18n.language]);
+    dayjs.locale(dateLocale);
+  }, [dateLocale]);
 
   const theme = useMemo(
     () =>
@@ -281,7 +290,7 @@ export const ThemeLanguageProvider = ({ children }: { children: React.ReactNode 
       value={{ mode, toggleColorMode, language: i18n.language, changeLanguage }}
     >
       <ThemeProvider theme={theme}>
-        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale={i18n.language}>
+        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale={dateLocale}>
           <CssBaseline />
           {children}
         </LocalizationProvider>

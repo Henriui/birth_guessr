@@ -6,6 +6,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { useTranslation } from 'react-i18next';
 import { ContentCopy } from '@mui/icons-material';
+import { EU_DATE_FORMAT } from '../utils/date';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -98,7 +99,7 @@ export default function Home() {
             label={t('home.field_due_date')}
             value={dueDate}
             onChange={(newValue) => setDueDate(newValue)}
-            format="DD/MM/YYYY"
+            format={EU_DATE_FORMAT}
             minDate={dayjs().add(1, 'day')}
             slotProps={{ textField: { fullWidth: true } }}
           />
@@ -116,7 +117,7 @@ export default function Home() {
                     label={t('home.field_guess_close_date')}
                     value={guessCloseDate}
                     onChange={(newValue) => setGuessCloseDate(newValue)}
-                    format="DD/MM/YYYY"
+                    format={EU_DATE_FORMAT}
                     slotProps={{ 
                         textField: { 
                             fullWidth: true, 

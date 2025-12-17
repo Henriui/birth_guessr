@@ -13,6 +13,7 @@ import type { TooltipProps } from 'recharts';
 import { Box, Paper, Typography } from '@mui/material';
 import type { ChartPoint } from './types';
 import dayjs from 'dayjs';
+import { EU_DATE_FORMAT, formatEuDate } from '../utils/date';
 
 interface GuessesChartProps {
   data: ChartPoint[];
@@ -28,7 +29,7 @@ const CustomTooltip = ({ active, payload }: TooltipProps<number, number>) => {
     { name: hoveredPoint.name, color: hoveredPoint.color, weightKg: hoveredPoint.y },
   ];
 
-  const dateLabel = dayjs(hoveredPoint.x).format('DD/MM/YYYY');
+  const dateLabel = formatEuDate(hoveredPoint.x);
 
   return (
     <Paper sx={{ p: 1.5 }}>
@@ -152,7 +153,7 @@ export function GuessesChart({ data, minY, maxY }: GuessesChartProps) {
           name="Date"
           domain={xDomain}
           ticks={xTicks}
-          tickFormatter={(unixTime) => dayjs(unixTime).format('DD/MM/YYYY')}
+          tickFormatter={(unixTime) => dayjs(unixTime).format(EU_DATE_FORMAT)}
         />
         <YAxis type="number" dataKey="y" name="Weight" unit="kg" domain={[paddedMin, paddedMax]} />
         <ZAxis type="number" dataKey="z" range={[50, 400]} name="Weight Size" />

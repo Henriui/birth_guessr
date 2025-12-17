@@ -2,7 +2,7 @@ import { Avatar, Card, CardContent, IconButton, List, ListItem, ListItemAvatar, 
 import type { Guess } from './types';
 import { useTranslation } from 'react-i18next';
 import { Delete, Edit } from '@mui/icons-material';
-import dayjs from 'dayjs';
+import { formatEuDate } from '../utils/date';
 
 interface GuessListProps {
   guesses: Guess[];
@@ -48,7 +48,7 @@ export function GuessList({ guesses, myInviteeId, allowGuessEdits, onEditGuess, 
                 primary={g.display_name}
                 secondary={t('guess_list.guess_summary', {
                   weight: g.guessed_weight_kg,
-                  date: dayjs(g.guessed_date).format('DD/MM/YYYY')
+                  date: formatEuDate(g.guessed_date)
                 })}
               />
             </ListItem>

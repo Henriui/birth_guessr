@@ -3,6 +3,7 @@ import type { EventData } from './types';
 import { useTranslation } from 'react-i18next';
 import { Edit as EditIcon } from '@mui/icons-material';
 import dayjs from 'dayjs';
+import { formatEuDate } from '../utils/date';
 
 interface EventHeaderProps {
   event: EventData;
@@ -14,11 +15,11 @@ export function EventHeader({ event, isAdmin, onEditDescription }: EventHeaderPr
   const { t } = useTranslation();
 
   const shareUrl = `${window.location.origin}/share/${encodeURIComponent(event.event_key)}`;
-  const dueDateLabel = event.due_date ? dayjs(event.due_date).format('DD/MM/YYYY') : null;
+  const dueDateLabel = event.due_date ? formatEuDate(event.due_date) : null;
   const closeDateLabel = event.guess_close_date
-    ? dayjs(event.guess_close_date).format('DD/MM/YYYY')
+    ? formatEuDate(event.guess_close_date)
     : event.due_date
-      ? dayjs(event.due_date).endOf('day').format('DD/MM/YYYY')
+      ? formatEuDate(dayjs(event.due_date).endOf('day'))
       : null;
 
   return (

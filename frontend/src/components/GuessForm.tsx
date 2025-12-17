@@ -4,6 +4,7 @@ import { DatePicker } from '@mui/x-date-pickers';
 import dayjs, { Dayjs } from 'dayjs';
 import type { EventData } from './types';
 import { useTranslation } from 'react-i18next';
+import { EU_DATE_FORMAT } from '../utils/date';
 
 interface GuessFormProps {
   event: EventData;
@@ -161,7 +162,7 @@ export function GuessForm({ event }: GuessFormProps) {
                 setGuessDate(newValue);
                 if (error) setError(null);
               }}
-              format="DD/MM/YYYY"
+              format={EU_DATE_FORMAT}
               slotProps={{
                 textField: { size: 'small', error: Boolean(error) },
               }}

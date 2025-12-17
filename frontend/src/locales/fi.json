@@ -30,7 +30,7 @@
   "guess_form": {
     "title": "Tee Arvaus",
     "field_name": "Nimesi",
-    "field_date": "Päivämäärä",
+    "field_date": "Syntymispäivämäärä",
     "field_weight": "Paino (kg)",
     "field_color": "Väri",
     "button_submit": "Lähetä Arvaus",

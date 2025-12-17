@@ -9,6 +9,7 @@ import { GuessList } from './GuessList';
 import type { ChartPoint, EventData, Guess } from './types';
 import { useTranslation } from 'react-i18next';
 import dayjs, { Dayjs } from 'dayjs';
+import { EU_DATE_FORMAT, formatEuDate } from '../utils/date';
 
 interface EventEndedAnnouncement {
   event_id: string;
@@ -533,7 +534,7 @@ export default function EventPage() {
   const closestWeightTop = endedAnnouncement?.closest_weight_top ?? [];
 
   const formatGuessSummary = (g: Guess) => {
-    const date = dayjs(g.guessed_date).format('DD/MM/YYYY');
+    const date = formatEuDate(g.guessed_date);
     const weight = Number(g.guessed_weight_kg).toFixed(2);
     return `${date} — ${weight} kg`;
   };
@@ -588,7 +589,7 @@ export default function EventPage() {
 
                   <Typography variant="body2" gutterBottom>
                     {t('event_page.correct_answer', {
-                      date: event.birth_date ? dayjs(event.birth_date).format('YYYY-MM-DD') : '-',
+                      date: event.birth_date ? formatEuDate(event.birth_date) : '-',
                       weight: typeof event.birth_weight_kg === 'number' ? event.birth_weight_kg.toFixed(2) : '-',
                     })}
                   </Typography>
@@ -777,7 +778,7 @@ export default function EventPage() {
                 setEditDate(newValue);
                 if (editError) setEditError(null);
               }}
-              format="DD/MM/YYYY"
+              format={EU_DATE_FORMAT}
               slotProps={{
                 textField: { size: 'small', error: Boolean(editError) },
               }}
@@ -825,7 +826,7 @@ export default function EventPage() {
                 setAnswerBirthDate(newValue);
                 if (answerError) setAnswerError(null);
               }}
-              format="DD/MM/YYYY"
+              format={EU_DATE_FORMAT}
               slotProps={{
                 textField: { size: 'small', error: Boolean(answerError) },
               }}

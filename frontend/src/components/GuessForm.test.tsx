@@ -27,7 +27,7 @@ describe('GuessForm', () => {
     renderWithProviders(<GuessForm event={event} />);
 
     await user.type(screen.getByLabelText('Your Name'), 'Alice');
-    await user.type(screen.getByLabelText('Date'), '2030-01-02');
+    await user.type(screen.getByLabelText('Birthdate guess'), '2030-01-02');
     await user.type(screen.getByLabelText('Weight (kg)'), '10');
     await user.click(screen.getByRole('button', { name: 'Submit Guess' }));
 
@@ -58,7 +58,7 @@ describe('GuessForm', () => {
     renderWithProviders(<GuessForm event={event} />);
 
     await user.type(screen.getByLabelText('Your Name'), 'Alice');
-    await user.type(screen.getByLabelText('Date'), '2030-01-02');
+    await user.type(screen.getByLabelText('Birthdate guess'), '2030-01-02');
     await user.type(screen.getByLabelText('Weight (kg)'), '3.2');
 
     await waitFor(() => {

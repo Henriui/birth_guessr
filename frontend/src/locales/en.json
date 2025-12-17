@@ -30,7 +30,7 @@
   "guess_form": {
     "title": "Make a Guess",
     "field_name": "Your Name",
-    "field_date": "Date",
+    "field_date": "Birthdate guess",
     "field_weight": "Weight (kg)",
     "field_color": "Color",
     "button_submit": "Submit Guess",
