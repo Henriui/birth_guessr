@@ -19,7 +19,7 @@ export function EventHeader({ event, isAdmin, onEditDescription }: EventHeaderPr
       <Container maxWidth="lg">
         <Grid container spacing={2} alignItems="center" justifyContent="space-between">
           <Grid item>
-            <Typography variant="h4" fontWeight="bold" gutterBottom>
+            <Typography component="h1" variant="h4" fontWeight="bold" gutterBottom>
               {event.title}
             </Typography>
             <Grid container spacing={1} alignItems="center" wrap="nowrap">
