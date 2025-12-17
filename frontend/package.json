@@ -7,6 +7,11 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:debug": "playwright test --debug",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -36,8 +41,15 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "@playwright/test": "^1.55.0",
+    "jsdom": "^26.1.0",
+    "msw": "^2.11.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
+    "vitest": "^3.2.4",
     "vite": "npm:rolldown-vite@7.2.5"
   },
   "overrides": {

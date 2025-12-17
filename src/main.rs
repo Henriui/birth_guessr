@@ -3,38 +3,20 @@
 #[cfg(target_env = "musl")]
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
-use axum::{
-    Router,
-    routing::{get, post},
-    serve,
-};
+use axum::serve;
 use chrono::{Duration, Utc};
+use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
-use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 use std::env;
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
-use tokio::sync::broadcast;
 use tower_http::services::{ServeDir, ServeFile};
 use tracing_subscriber::EnvFilter;
 
 use tracing;
 
-mod handlers;
-mod models;
-mod schema;
-mod types;
-mod utils;
-
-use handlers::{
-    claim_event, create_event, delete_event, get_event_by_key, get_event_guesses, health,
-    delete_guess, set_event_answer, sse_subscribe, submit_guess, update_event_description,
-    update_event_settings, share_event_preview, update_guess,
-};
-use types::{AppState, RateLimiter};
-
-pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
+use baby_birth_guessr::{build_router, build_state, create_pool, run_migrations};
 
 async fn run_cleanup_task(pool: r2d2::Pool<ConnectionManager<PgConnection>>) {
     // Run once on startup
@@ -51,7 +33,7 @@ async fn run_cleanup_task(pool: r2d2::Pool<ConnectionManager<PgConnection>>) {
 async fn cleanup_job(pool: &r2d2::Pool<ConnectionManager<PgConnection>>) {
     let pool = pool.clone();
     let result = tokio::task::spawn_blocking(move || {
-        use crate::schema::events::dsl::*;
+        use baby_birth_guessr::schema::events::dsl::*;
         let mut conn = match pool.get() {
             Ok(c) => c,
             Err(e) => return Err(format!("Failed to get connection: {}", e)),
@@ -87,10 +69,7 @@ async fn main() {
         .init();
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let manager = ConnectionManager::<PgConnection>::new(database_url);
-    let pool = r2d2::Pool::builder()
-        .build(manager)
-        .expect("Failed to create pool.");
+    let pool = create_pool(&database_url);
 
     // Start cleanup task
     let cleanup_pool = pool.clone();
@@ -98,50 +77,14 @@ async fn main() {
         run_cleanup_task(cleanup_pool).await;
     });
 
-    {
-        let mut conn = pool.get().expect("Failed to get connection for migrations");
-        conn.run_pending_migrations(MIGRATIONS)
-            .expect("Failed to run migrations");
-    }
+    run_migrations(&pool);
 
-    let (tx, _rx) = broadcast::channel(100);
-
-    let state = AppState {
-        pool,
-        tx,
-        rate_limiter: std::sync::Arc::new(RateLimiter::new()),
-    };
+    let state = build_state(pool);
 
     // define routes
-    let app = Router::new()
-        .route("/api/health", get(health))
-        .route("/api/events", post(create_event))
-        .route("/api/events/{id}", axum::routing::delete(delete_event))
-        .route("/api/events/{id}/claim", post(claim_event))
-        .route("/api/events/by-key/{key}", get(get_event_by_key))
-        .route("/share/{key}", get(share_event_preview))
-        .route(
-            "/api/events/{id}/guesses",
-            post(submit_guess).get(get_event_guesses),
-        )
-        .route(
-            "/api/events/{id}/guesses/{invitee_id}",
-            axum::routing::put(update_guess).delete(delete_guess),
-        )
-        .route(
-            "/api/events/{id}/settings",
-            axum::routing::put(update_event_settings),
-        )
-        .route(
-            "/api/events/{id}/description",
-            axum::routing::put(update_event_description),
-        )
-        .route("/api/events/{id}/answer", post(set_event_answer))
-        .route("/api/events/live", get(sse_subscribe))
-        .fallback_service(
-            ServeDir::new("public").not_found_service(ServeFile::new("public/index.html")),
-        )
-        .with_state(state);
+    let app = build_router(state).fallback_service(
+        ServeDir::new("public").not_found_service(ServeFile::new("public/index.html")),
+    );
 
     // run server
     let host = env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());

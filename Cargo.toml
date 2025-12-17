@@ -26,3 +26,7 @@ petname = "2.0"
 
 [target.'cfg(target_env = "musl")'.dependencies]
 mimalloc = "0.1.43"
+
+[dev-dependencies]
+ tower = "0.5"
+ http-body-util = "0.1"
