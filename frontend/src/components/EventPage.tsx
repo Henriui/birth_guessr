@@ -58,6 +58,7 @@ export default function EventPage() {
     }
 
     let sse: EventSource | null = null;
+    let sseErrorHandled = false;
     let cancelled = false;
 
     const fetchData = async () => {
@@ -141,10 +142,22 @@ export default function EventPage() {
           }
         };
 
-        sse.onerror = () => {
-          // If the event was deleted while viewing it, the live stream will fail.
-          // Send the user back to the front page.
-          if (!cancelled) navigate('/');
+        sse.onerror = async () => {
+          if (cancelled) return;
+          if (sseErrorHandled) return;
+          sseErrorHandled = true;
+
+          // If the live stream fails, only redirect the user if the event is actually gone.
+          // In practice, SSE can fail for transient reasons (or be mocked/closed in tests).
+          try {
+            sse?.close();
+            const res = await fetch(`/api/events/by-key/${eventKey}`);
+            if (!res.ok && !cancelled) {
+              navigate('/');
+            }
+          } catch {
+            // Ignore transient network issues.
+          }
         };
       } catch {
         if (!cancelled) navigate('/');
