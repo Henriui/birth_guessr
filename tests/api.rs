@@ -18,8 +18,29 @@ static TEST_MUTEX: OnceLock<Mutex<()>> = OnceLock::new();
 
 fn pool() -> &'static DbPool {
     TEST_POOL.get_or_init(|| {
-        let database_url =
-            std::env::var("DATABASE_URL").expect("DATABASE_URL must be set for tests");
+        dotenvy::dotenv().ok();
+
+        let app_env = std::env::var("APP_ENV").ok();
+        assert_eq!(
+            app_env.as_deref(),
+            Some("test"),
+            "APP_ENV must be set to test (use scripts/test-backend.sh)"
+        );
+
+        let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
+            panic!("DATABASE_URL must be set for tests (use scripts/test-backend.sh)")
+        });
+
+        assert!(
+            database_url.contains("localhost") || database_url.contains("127.0.0.1"),
+            "Refusing to run tests: DATABASE_URL must point to localhost/127.0.0.1 (use scripts/test-backend.sh)"
+        );
+
+        assert!(
+            database_url.contains("_test"),
+            "Refusing to run tests: DB name must include _test (use scripts/test-backend.sh)"
+        );
+
         let pool = create_pool(&database_url);
         run_migrations(&pool);
         pool

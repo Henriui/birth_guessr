@@ -34,7 +34,7 @@ test('event page loads and allows guessing', async ({ page }) => {
   await expect(page.getByText('Event abc123')).toBeVisible();
 
   await page.getByLabel('Your Name', { exact: true }).fill('Alice');
-  await page.getByLabel('Date', { exact: true }).fill('02/01/2030');
+  await page.getByLabel('Birthdate guess', { exact: true }).fill('02/01/2030');
   await page.getByLabel('Weight (kg)', { exact: true }).fill('3.2');
 
   await page.getByRole('button', { name: 'Submit Guess' }).click();
