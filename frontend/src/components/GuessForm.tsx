@@ -133,7 +133,7 @@ export function GuessForm({ event }: GuessFormProps) {
       }}
     >
       <CardContent>
-        <Typography variant="h6" gutterBottom>
+        <Typography variant="h6" gutterBottom sx={{ pt: 0.25 }}>
           {t('guess_form.title')}
         </Typography>
         <Stack spacing={2}>

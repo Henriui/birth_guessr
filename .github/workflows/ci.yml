@@ -24,6 +24,7 @@ jobs:
     env:
       APP_ENV: test
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/baby_birth_guessr_test
+      RUST_TEST_THREADS: '1'
     steps:
       - name: Checkout
         uses: actions/checkout@v4

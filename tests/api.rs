@@ -10,9 +10,11 @@ use http_body_util::BodyExt;
 use serde_json::json;
 use std::net::SocketAddr;
 use std::sync::OnceLock;
+use tokio::sync::Mutex;
 use tower::ServiceExt;
 
 static TEST_POOL: OnceLock<DbPool> = OnceLock::new();
+static TEST_MUTEX: OnceLock<Mutex<()>> = OnceLock::new();
 
 fn pool() -> &'static DbPool {
     TEST_POOL.get_or_init(|| {
@@ -22,6 +24,10 @@ fn pool() -> &'static DbPool {
         run_migrations(&pool);
         pool
     })
+}
+
+fn test_mutex() -> &'static Mutex<()> {
+    TEST_MUTEX.get_or_init(|| Mutex::new(()))
 }
 
 fn reset_db() {
@@ -113,6 +119,7 @@ async fn submit_guess(
 
 #[tokio::test]
 async fn health_works() {
+    let _guard = test_mutex().lock().await;
     reset_db();
     let app = test_app();
 
@@ -129,6 +136,7 @@ async fn health_works() {
 
 #[tokio::test]
 async fn create_event_works_in_test_env_without_turnstile() {
+    let _guard = test_mutex().lock().await;
     reset_db();
     assert_eq!(
         std::env::var("APP_ENV").ok().as_deref(),
@@ -146,6 +154,7 @@ async fn create_event_works_in_test_env_without_turnstile() {
 
 #[tokio::test]
 async fn submit_update_and_delete_guess_flow_works() {
+    let _guard = test_mutex().lock().await;
     reset_db();
     let app = test_app();
 
@@ -203,6 +212,7 @@ async fn submit_update_and_delete_guess_flow_works() {
 
 #[tokio::test]
 async fn cannot_update_guess_when_allow_guess_edits_is_false() {
+    let _guard = test_mutex().lock().await;
     reset_db();
     let app = test_app();
 
@@ -239,6 +249,7 @@ async fn cannot_update_guess_when_allow_guess_edits_is_false() {
 
 #[tokio::test]
 async fn setting_answer_ends_event_and_blocks_new_guesses() {
+    let _guard = test_mutex().lock().await;
     reset_db();
     let app = test_app();
 
@@ -283,6 +294,7 @@ async fn setting_answer_ends_event_and_blocks_new_guesses() {
 
 #[tokio::test]
 async fn get_event_by_key_returns_created_event() {
+    let _guard = test_mutex().lock().await;
     reset_db();
     let app = test_app();
 
@@ -302,6 +314,7 @@ async fn get_event_by_key_returns_created_event() {
 
 #[tokio::test]
 async fn get_event_guesses_returns_points_after_submit() {
+    let _guard = test_mutex().lock().await;
     reset_db();
     let app = test_app();
 
@@ -324,6 +337,7 @@ async fn get_event_guesses_returns_points_after_submit() {
 
 #[tokio::test]
 async fn update_event_settings_toggles_allow_guess_edits() {
+    let _guard = test_mutex().lock().await;
     reset_db();
     let app = test_app();
 
@@ -350,6 +364,7 @@ async fn update_event_settings_toggles_allow_guess_edits() {
 
 #[tokio::test]
 async fn update_event_description_requires_secret_and_persists() {
+    let _guard = test_mutex().lock().await;
     reset_db();
     let app = test_app();
 
@@ -389,6 +404,7 @@ async fn update_event_description_requires_secret_and_persists() {
 
 #[tokio::test]
 async fn claim_event_requires_secret() {
+    let _guard = test_mutex().lock().await;
     reset_db();
     let app = test_app();
 

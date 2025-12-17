@@ -19,7 +19,7 @@ export function GuessList({ guesses, myInviteeId, allowGuessEdits, onEditGuess, 
   return (
     <Card sx={{ borderRadius: 4, flexGrow: 1 }}>
       <CardContent>
-        <Typography variant="h6" gutterBottom>
+        <Typography variant="h6" gutterBottom sx={{ pt: 0.25 }}>
           {t('guess_list.title')}
         </Typography>
         <List dense sx={{ maxHeight: 300, overflow: 'auto' }}>

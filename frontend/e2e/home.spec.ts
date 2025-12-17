@@ -57,8 +57,10 @@ test('join event navigates to event page', async ({ page }) => {
   await page.goto('/');
 
   await page.getByPlaceholder('XXXXXX-XXXXXX-XXXXXX').fill('abc123');
+  const eventResPromise = page.waitForResponse('**/api/events/by-key/abc123');
   await page.getByRole('button', { name: 'Join' }).click();
 
   await expect(page).toHaveURL(/\/event\?key=abc123/);
-  await expect(page.getByText('Event abc123')).toBeVisible();
+  await eventResPromise;
+  await expect(page.getByRole('heading', { name: 'Event abc123' })).toBeVisible();
 });

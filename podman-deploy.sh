@@ -1,12 +1,6 @@
 #!/bin/bash
 set -e
 
-# Check if pod exists and remove it if it does (cleanup)
-if podman pod exists birth_guessr_pod; then
-    echo "Cleaning up existing pod..."
-    podman pod rm -f birth_guessr_pod
-fi
-
 # Load environment variables from .env if present
 if [ -f .env ]; then
     set -a
@@ -14,12 +8,30 @@ if [ -f .env ]; then
     set +a
 fi
 
+RUN_TESTS="${RUN_TESTS:-0}"
+
 if [ -z "$POSTGRES_USER" ] || [ -z "$POSTGRES_PASSWORD" ] || [ -z "$POSTGRES_DB" ]; then
     echo "Error: POSTGRES_USER, POSTGRES_PASSWORD, or POSTGRES_DB not set in .env"
     exit 1
 fi
 
 echo "Using Postgres User: $POSTGRES_USER"
+
+if [[ "$RUN_TESTS" == "1" ]]; then
+    bash scripts/test-all.sh
+fi
+
+# Build the app
+echo "Building Application..."
+podman build --tls-verify=false \
+    --build-arg VITE_TURNSTILE_SITE_KEY=$VITE_TURNSTILE_SITE_KEY \
+    -t birth_guessr_app .
+
+# Check if pod exists and remove it if it does (cleanup)
+if podman pod exists birth_guessr_pod; then
+    echo "Cleaning up existing pod..."
+    podman pod rm -f birth_guessr_pod
+fi
 
 # Create a pod with port mapping
 # This exposes port 3000 (HTTP) and 8443 (HTTPS) from the pod to the host
@@ -53,12 +65,6 @@ podman run -d --name birth_guessr_db --pod birth_guessr_pod \
 # Wait for DB to likely be up (basic check)
 echo "Waiting for DB to initialize..."
 sleep 5
-
-# Build the app
-echo "Building Application..."
-podman build --tls-verify=false \
-    --build-arg VITE_TURNSTILE_SITE_KEY=$VITE_TURNSTILE_SITE_KEY \
-    -t birth_guessr_app .
 
 # Run Caddy Sidecar for SSL
 echo "Starting Caddy Proxy..."

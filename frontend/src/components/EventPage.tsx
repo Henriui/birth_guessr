@@ -533,7 +533,9 @@ export default function EventPage() {
         <Grid container spacing={4}>
           <Grid item xs={12} lg={8}>
             <Paper sx={{ p: 3, borderRadius: 4, height: 500 }}>
-              <Typography variant="h6" gutterBottom>{t('event_page.chart_title')}</Typography>
+              <Typography variant="h6" gutterBottom sx={{ pt: 0.25 }}>
+                {t('event_page.chart_title')}
+              </Typography>
               <GuessesChart data={chartData} minY={event.min_weight_kg} maxY={event.max_weight_kg} />
             </Paper>
           </Grid>
