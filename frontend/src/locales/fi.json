@@ -28,20 +28,20 @@
     "guesses_until": "Arvaukset asti"
   },
   "guess_form": {
-    "title": "Tee Arvaus 🎲",
+    "title": "Tee Arvaus",
     "field_name": "Nimesi",
     "field_date": "Päivämäärä",
     "field_weight": "Paino (kg)",
     "field_color": "Väri",
     "button_submit": "Lähetä Arvaus",
     "alert_weight_range": "Paino ei ole tapahtuman salliman haarukan sisällä.",
-    "alert_chonker": "Melkoinen jötkäle! Oletko varma? 🐘",
-    "alert_past_date": "Et voi veikata mennyttä päivämäärää! 🕰️",
-    "alert_date_limit": "Päivämäärä ei voi olla yli kuukautta lasketun ajan jälkeen! 📅",
+    "alert_chonker": "Melkoinen jötkäle! Oletko varma?",
+    "alert_past_date": "Et voi veikata mennyttä päivämäärää!",
+    "alert_date_limit": "Päivämäärä ei voi olla yli kuukautta lasketun ajan jälkeen!",
     "alert_submit_fail": "Arvauksen lähetys epäonnistui",
     "guesses_closed_title": "Arvaukset ovat sulkeutuneet",
     "guesses_closed_desc": "Tähän tapahtumaan ei voi enää lähettää arvauksia.",
-    "already_guessed": "Olet jo arvannut! 🎉",
+    "already_guessed": "Olet jo arvannut!",
     "game_ended": "Peli on päättynyt. Kiitos pelaamisesta!"
   },
   "guess_list": {
@@ -61,7 +61,7 @@
   },
   "event_page": {
     "loading": "Ladataan...",
-    "chart_title": "Arvauskäyrä 📊",
+    "chart_title": "Arvauskäyrä",
     "alert_load_fail": "Tapahtumaa ei voitu ladata",
     "error_not_found": "Tapahtumaa ei löytynyt",
     "game_ended_title": "Vauva on syntynyt! 🎉",

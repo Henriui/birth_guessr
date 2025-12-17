@@ -28,7 +28,7 @@
     "guesses_until": "Guesses until"
   },
   "guess_form": {
-    "title": "Make a Guess 🎲",
+    "title": "Make a Guess",
     "field_name": "Your Name",
     "field_date": "Date",
     "field_weight": "Weight (kg)",
@@ -36,8 +36,8 @@
     "button_submit": "Submit Guess",
     "alert_weight_range": "Weight is outside the allowed range for this event.",
     "alert_chonker": "That's a chonker! Are you sure? 🐘",
-    "alert_past_date": "Can't wager a date in the past! 🕰️",
-    "alert_date_limit": "Date can't be more than 1 month after due date! 📅",
+    "alert_past_date": "Can't wager a date in the past!",
+    "alert_date_limit": "Date can't be more than 1 month after due date!",
     "alert_submit_fail": "Failed to submit guess",
     "guesses_closed_title": "Guesses are closed",
     "guesses_closed_desc": "This event is no longer accepting guesses.",
@@ -61,7 +61,7 @@
   },
   "event_page": {
     "loading": "Loading...",
-    "chart_title": "Guesses Graph 📊",
+    "chart_title": "Guesses Graph",
     "alert_load_fail": "Could not load event",
     "error_not_found": "Event not found",
     "game_ended_title": "Baby is here! 🎉",
