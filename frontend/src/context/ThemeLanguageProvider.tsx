@@ -41,55 +41,61 @@ export const ThemeLanguageProvider = ({ children }: { children: React.ReactNode 
         palette: {
           mode,
           primary: {
-            main: mode === 'light' ? '#6d28d9' : '#a78bfa',
+            main: mode === 'light' ? '#2E6F5E' : '#7AD7BE',
           },
           secondary: {
-            main: mode === 'light' ? '#c2410c' : '#fb923c',
+            main: mode === 'light' ? '#7B2CBF' : '#C9A1FF',
           },
           text: {
-            primary: mode === 'light' ? '#121826' : '#e5e7eb',
-            secondary: mode === 'light' ? '#4b5563' : '#a1a1aa',
+            primary: mode === 'light' ? '#171717' : '#F1F0EE',
+            secondary: mode === 'light' ? '#4A4A4A' : '#B9B7B2',
           },
           background: {
-            default: mode === 'light' ? '#fbf7f2' : '#0b1020',
-            paper: mode === 'light' ? '#ffffff' : '#121a33',
+            default: mode === 'light' ? '#FBF4E8' : '#0E1110',
+            paper: mode === 'light' ? '#FFFDF8' : '#151A18',
           },
         },
         shape: {
           borderRadius: 16,
         },
         typography: {
-          fontFamily: '"Bricolage Grotesque", sans-serif',
+          fontFamily: '"Recursive", sans-serif',
           h1: {
+            fontFamily: '"Fraunces", serif',
             fontWeight: 800,
             fontSize: '3.5rem',
             lineHeight: 1.05,
             letterSpacing: '-0.04em',
           },
           h2: {
+            fontFamily: '"Fraunces", serif',
             fontWeight: 800,
             fontSize: '2.5rem',
             lineHeight: 1.1,
             letterSpacing: '-0.03em',
           },
           h3: {
+            fontFamily: '"Fraunces", serif',
             fontWeight: 800,
             fontSize: '2.0rem',
             lineHeight: 1.15,
             letterSpacing: '-0.02em',
           },
           h4: {
+            fontFamily: '"Fraunces", serif',
             fontWeight: 800,
             fontSize: '1.6rem',
             lineHeight: 1.2,
             letterSpacing: '-0.015em',
           },
           h5: {
+            fontFamily: '"Fraunces", serif',
             fontWeight: 800,
             fontSize: '1.25rem',
             lineHeight: 1.25,
           },
           h6: {
+            fontFamily: '"Fraunces", serif',
             fontWeight: 800,
             fontSize: '1.05rem',
             lineHeight: 1.25,
@@ -118,35 +124,64 @@ export const ThemeLanguageProvider = ({ children }: { children: React.ReactNode 
         components: {
           MuiCssBaseline: {
             styleOverrides: {
+              '@keyframes paperReveal': {
+                '0%': {
+                  opacity: 0,
+                  transform: 'translateY(14px)',
+                  filter: 'blur(2px)',
+                },
+                '100%': {
+                  opacity: 1,
+                  transform: 'translateY(0px)',
+                  filter: 'blur(0px)',
+                },
+              },
+              '.paper-reveal': {
+                opacity: 0,
+                animation: 'paperReveal 700ms cubic-bezier(0.2, 0.9, 0.2, 1) forwards',
+                willChange: 'transform, opacity, filter',
+              },
+              '.paper-reveal-1': { animationDelay: '40ms' },
+              '.paper-reveal-2': { animationDelay: '140ms' },
+              '.paper-reveal-3': { animationDelay: '240ms' },
+              '.paper-reveal-4': { animationDelay: '340ms' },
               body: {
                 textRendering: 'geometricPrecision',
                 WebkitFontSmoothing: 'antialiased',
                 MozOsxFontSmoothing: 'grayscale',
                 backgroundImage:
                   mode === 'light'
-                    ? 'radial-gradient(1200px 800px at 20% -10%, rgba(109, 40, 217, 0.12), transparent 60%), radial-gradient(900px 700px at 90% 10%, rgba(194, 65, 12, 0.10), transparent 55%)'
-                    : 'radial-gradient(1200px 800px at 20% -10%, rgba(167, 139, 250, 0.14), transparent 60%), radial-gradient(900px 700px at 90% 10%, rgba(251, 146, 60, 0.12), transparent 55%)',
+                    ? 'radial-gradient(900px 650px at 18% 6%, rgba(46, 111, 94, 0.10), transparent 62%), radial-gradient(980px 720px at 92% 8%, rgba(123, 44, 191, 0.10), transparent 58%), linear-gradient(0deg, rgba(255, 255, 255, 0.20), rgba(255, 255, 255, 0.20)), repeating-linear-gradient(0deg, rgba(23, 23, 23, 0.025), rgba(23, 23, 23, 0.025) 1px, transparent 1px, transparent 22px)'
+                    : 'radial-gradient(900px 650px at 18% 6%, rgba(122, 215, 190, 0.13), transparent 62%), radial-gradient(980px 720px at 92% 8%, rgba(201, 161, 255, 0.12), transparent 58%), linear-gradient(0deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.03)), repeating-linear-gradient(0deg, rgba(241, 240, 238, 0.05), rgba(241, 240, 238, 0.05) 1px, transparent 1px, transparent 22px)',
               },
               a: {
                 color: 'inherit',
                 textDecorationColor:
-                  mode === 'light' ? 'rgba(109, 40, 217, 0.45)' : 'rgba(167, 139, 250, 0.55)',
+                  mode === 'light' ? 'rgba(46, 111, 94, 0.45)' : 'rgba(122, 215, 190, 0.50)',
                 textUnderlineOffset: '0.18em',
                 textDecorationThickness: '1px',
               },
               'a:hover': {
                 textDecorationColor:
-                  mode === 'light' ? 'rgba(194, 65, 12, 0.55)' : 'rgba(251, 146, 60, 0.65)',
+                  mode === 'light' ? 'rgba(123, 44, 191, 0.55)' : 'rgba(201, 161, 255, 0.62)',
               },
               '::selection': {
                 background:
-                  mode === 'light' ? 'rgba(109, 40, 217, 0.18)' : 'rgba(167, 139, 250, 0.22)',
+                  mode === 'light' ? 'rgba(46, 111, 94, 0.16)' : 'rgba(122, 215, 190, 0.18)',
               },
               code: {
                 fontFamily: '"JetBrains Mono", monospace',
               },
               pre: {
                 fontFamily: '"JetBrains Mono", monospace',
+              },
+              '@media (prefers-reduced-motion: reduce)': {
+                '.paper-reveal': {
+                  opacity: 1,
+                  animation: 'none',
+                  transform: 'none',
+                  filter: 'none',
+                },
               },
             },
           },
@@ -156,8 +191,8 @@ export const ThemeLanguageProvider = ({ children }: { children: React.ReactNode 
                 backgroundImage: 'none',
                 border:
                   mode === 'light'
-                    ? '1px solid rgba(18, 24, 38, 0.08)'
-                    : '1px solid rgba(229, 231, 235, 0.10)',
+                    ? '1px solid rgba(23, 23, 23, 0.10)'
+                    : '1px solid rgba(241, 240, 238, 0.10)',
               },
             },
           },
@@ -166,8 +201,8 @@ export const ThemeLanguageProvider = ({ children }: { children: React.ReactNode 
               root: {
                 borderBottom:
                   mode === 'light'
-                    ? '1px solid rgba(18, 24, 38, 0.08)'
-                    : '1px solid rgba(229, 231, 235, 0.10)',
+                    ? '1px solid rgba(23, 23, 23, 0.10)'
+                    : '1px solid rgba(241, 240, 238, 0.10)',
               },
             },
           },

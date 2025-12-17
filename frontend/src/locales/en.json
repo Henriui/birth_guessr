@@ -23,7 +23,9 @@
     "copy_link": "Copy Link"
   },
   "event_header": {
-    "invite_key": "Invite Key"
+    "invite_key": "Invite Key",
+    "due_date": "Due date",
+    "guesses_until": "Guesses until"
   },
   "guess_form": {
     "title": "Make a Guess 🎲",
@@ -37,6 +39,8 @@
     "alert_past_date": "Can't wager a date in the past! 🕰️",
     "alert_date_limit": "Date can't be more than 1 month after due date! 📅",
     "alert_submit_fail": "Failed to submit guess",
+    "guesses_closed_title": "Guesses are closed",
+    "guesses_closed_desc": "This event is no longer accepting guesses.",
     "already_guessed": "You have already guessed! 🎉",
     "game_ended": "The game has ended. Thanks for playing!"
   },

@@ -170,9 +170,13 @@ export default function EventPage() {
   const guessingClosed = useMemo(() => {
     if (!event) return true;
     if (hasEnded) return true;
-    const close = event.guess_close_date ?? event.due_date;
+    const close = event.guess_close_date
+      ? dayjs(event.guess_close_date)
+      : event.due_date
+        ? dayjs(event.due_date).endOf('day')
+        : null;
     if (!close) return false;
-    return dayjs().isAfter(dayjs(close));
+    return dayjs().isAfter(close);
   }, [event, hasEnded]);
 
   const uniqueGuesses = useMemo(() => {
@@ -486,7 +490,7 @@ export default function EventPage() {
     }
   };
 
-  if (!event) return <Typography p={4}>{t('event_page.loading')}</Typography>;
+  if (!event) return <Typography className="paper-reveal paper-reveal-1" p={4}>{t('event_page.loading')}</Typography>;
 
   const computedClosestDateTop = (() => {
     if (!event.birth_date) return [] as Guess[];
@@ -532,7 +536,7 @@ export default function EventPage() {
       <Container maxWidth="lg">
         <Grid container spacing={4}>
           <Grid item xs={12} lg={8}>
-            <Paper sx={{ p: 3, borderRadius: 4, height: 500 }}>
+            <Paper className="paper-reveal paper-reveal-2" sx={{ p: 3, borderRadius: 4, height: 500 }}>
               <Typography variant="h6" gutterBottom sx={{ pt: 0.25 }}>
                 {t('event_page.chart_title')}
               </Typography>
@@ -542,8 +546,19 @@ export default function EventPage() {
 
 
           <Grid item xs={12} lg={4}>
-            <Stack spacing={3}>
-              <GuessForm event={event} />
+            <Stack className="paper-reveal paper-reveal-3" spacing={3}>
+              {guessingClosed ? (
+                <Paper sx={{ p: 2.5, borderRadius: 4 }}>
+                  <Typography variant="h6" gutterBottom>
+                    {t('guess_form.guesses_closed_title')}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {t('guess_form.guesses_closed_desc')}
+                  </Typography>
+                </Paper>
+              ) : (
+                <GuessForm event={event} />
+              )}
               <GuessList
                 guesses={uniqueGuesses}
                 myInviteeId={myInviteeId}
@@ -596,7 +611,7 @@ export default function EventPage() {
           </Grid>
         </Grid>
 
-        <Box display="flex" justifyContent="center" mt={6}>
+        <Box className="paper-reveal paper-reveal-4" display="flex" justifyContent="center" mt={6}>
           <Stack spacing={2} alignItems="center">
             {!isClaimedAdmin ? (
               <Button variant="outlined" onClick={handleClaimOpen}>

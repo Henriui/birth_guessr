@@ -91,7 +91,13 @@ export function GuessForm({ event }: GuessFormProps) {
         setWeight('');
         setGuessDate(null);
       } else {
-        setError(t('guess_form.alert_submit_fail'));
+        try {
+          const body = await res.json();
+          const msg = body?.error;
+          setError(typeof msg === 'string' && msg.length ? msg : t('guess_form.alert_submit_fail'));
+        } catch {
+          setError(t('guess_form.alert_submit_fail'));
+        }
       }
     } catch {
       setError(t('guess_form.alert_submit_fail'));

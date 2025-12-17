@@ -69,12 +69,12 @@ export default function Home() {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', py: 4 }}>
-      <Paper elevation={3} sx={{ p: 4, width: '100%', borderRadius: 4 }}>
-        <Typography variant="h4" component="h1" align="center" gutterBottom fontWeight="bold" color="primary">
+    <Container maxWidth="sm" className="paper-reveal paper-reveal-1" sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', py: 4 }}>
+      <Paper elevation={3} className="paper-reveal paper-reveal-2" sx={{ p: 4, width: '100%', borderRadius: 4 }}>
+        <Typography variant="h4" component="h1" className="paper-reveal paper-reveal-3" align="center" gutterBottom fontWeight="bold" color="primary">
           {t('home.title')}
         </Typography>
-        <Typography variant="body1" align="center" color="text.secondary" mb={4}>
+        <Typography variant="body1" className="paper-reveal paper-reveal-4" align="center" color="text.secondary" mb={4}>
           {t('home.subtitle')}
         </Typography>
 
@@ -99,6 +99,7 @@ export default function Home() {
             value={dueDate}
             onChange={(newValue) => setDueDate(newValue)}
             format="DD/MM/YYYY"
+            minDate={dayjs().add(1, 'day')}
             slotProps={{ textField: { fullWidth: true } }}
           />
 
@@ -122,7 +123,7 @@ export default function Home() {
                             helperText: t('home.help_guess_close_date') 
                         } 
                     }}
-                    minDate={dayjs()}
+                    minDate={dayjs().add(1, 'day')}
                     maxDate={dueDate || undefined}
                   />
 

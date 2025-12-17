@@ -28,6 +28,20 @@ pub async fn health() -> &'static str {
     "ok"
 }
 
+#[derive(serde::Serialize)]
+pub struct ApiError {
+    error: String,
+}
+
+fn api_error(status: StatusCode, msg: impl Into<String>) -> (StatusCode, Json<ApiError>) {
+    (
+        status,
+        Json(ApiError {
+            error: msg.into(),
+        }),
+    )
+}
+
 fn html_escape(input: &str) -> String {
     let mut out = String::with_capacity(input.len());
     for ch in input.chars() {
@@ -62,6 +76,15 @@ fn client_ip(headers: &HeaderMap, peer: SocketAddr) -> IpAddr {
         }
     }
     peer.ip()
+}
+
+fn effective_guess_close_date(event: &Event) -> Option<chrono::NaiveDateTime> {
+    if let Some(close) = event.guess_close_date {
+        return Some(close);
+    }
+
+    let due = event.due_date?;
+    chrono::NaiveTime::from_hms_opt(23, 59, 59).map(|t| due.date().and_time(t))
 }
 
 pub async fn delete_event(
@@ -113,63 +136,105 @@ struct TurnstileVerifyResponse {
 pub async fn create_event(
     State(state): State<AppState>,
     Json(payload): Json<CreateEventRequest>,
-) -> Result<Json<EventWithSecret>, StatusCode> {
+) -> Result<Json<EventWithSecret>, (StatusCode, Json<ApiError>)> {
     const DEFAULT_MIN_WEIGHT_KG: f64 = 1.8;
     const DEFAULT_MAX_WEIGHT_KG: f64 = 5.2;
     const HARD_MIN_WEIGHT_KG: f64 = 1.0;
     const HARD_MAX_WEIGHT_KG: f64 = 8.0;
 
     
+    let CreateEventRequest {
+        title,
+        description,
+        due_date,
+        guess_close_date,
+        turnstile_token,
+        min_weight_kg,
+        max_weight_kg,
+        allow_guess_edits,
+    } = payload;
+
     if std::env::var("APP_ENV").ok().as_deref() != Some("test") {
         let secret =
-            std::env::var("TURNSTILE_SECRET_KEY").map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            std::env::var("TURNSTILE_SECRET_KEY").map_err(|_| {
+                api_error(StatusCode::INTERNAL_SERVER_ERROR, "Missing TURNSTILE_SECRET_KEY")
+            })?;
 
         let client = reqwest::Client::new();
         let verify_result = client
             .post("https://challenges.cloudflare.com/turnstile/v0/siteverify")
             .form(&[
                 ("secret", secret),
-                ("response", payload.turnstile_token.clone()),
+                ("response", turnstile_token.clone()),
             ])
             .send()
             .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+            .map_err(|_| api_error(StatusCode::INTERNAL_SERVER_ERROR, "Turnstile verify failed"))?
             .json::<TurnstileVerifyResponse>()
             .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            .map_err(|_| api_error(StatusCode::INTERNAL_SERVER_ERROR, "Turnstile verify failed"))?;
 
         if !verify_result.success {
-            return Err(StatusCode::BAD_REQUEST);
+            return Err(api_error(StatusCode::BAD_REQUEST, "Turnstile verification failed"));
         }
     }
 
-    if payload.due_date.is_none() {
-        return Err(StatusCode::BAD_REQUEST);
+    let now = chrono::Utc::now().naive_utc();
+    let today = now.date();
+
+    let due_date = due_date.ok_or_else(|| api_error(StatusCode::BAD_REQUEST, "due_date is required"))?;
+    if due_date.date() <= today {
+        return Err(api_error(
+            StatusCode::BAD_REQUEST,
+            "due_date must be after today",
+        ));
+    }
+
+    if let Some(close_date) = guess_close_date {
+        if close_date.date() <= today {
+            return Err(api_error(
+                StatusCode::BAD_REQUEST,
+                "guess_close_date must be after today",
+            ));
+        }
+
+        if close_date.date() > due_date.date() {
+            return Err(api_error(
+                StatusCode::BAD_REQUEST,
+                "guess_close_date must be on or before due_date",
+            ));
+        }
     }
 
     let event_key = generate_event_key();
     let secret_key = generate_secret_key();
 
-    let mut min_weight_kg = payload.min_weight_kg.unwrap_or(DEFAULT_MIN_WEIGHT_KG);
-    let mut max_weight_kg = payload.max_weight_kg.unwrap_or(DEFAULT_MAX_WEIGHT_KG);
-    let allow_guess_edits = payload.allow_guess_edits.unwrap_or(false);
+    let mut min_weight_kg = min_weight_kg.unwrap_or(DEFAULT_MIN_WEIGHT_KG);
+    let mut max_weight_kg = max_weight_kg.unwrap_or(DEFAULT_MAX_WEIGHT_KG);
+    let allow_guess_edits = allow_guess_edits.unwrap_or(false);
 
     if !min_weight_kg.is_finite() || !max_weight_kg.is_finite() {
-        return Err(StatusCode::BAD_REQUEST);
+        return Err(api_error(
+            StatusCode::BAD_REQUEST,
+            "min_weight_kg and max_weight_kg must be finite",
+        ));
     }
 
     min_weight_kg = min_weight_kg.clamp(HARD_MIN_WEIGHT_KG, HARD_MAX_WEIGHT_KG);
     max_weight_kg = max_weight_kg.clamp(HARD_MIN_WEIGHT_KG, HARD_MAX_WEIGHT_KG);
 
     if max_weight_kg <= min_weight_kg {
-        return Err(StatusCode::BAD_REQUEST);
+        return Err(api_error(
+            StatusCode::BAD_REQUEST,
+            "max_weight_kg must be greater than min_weight_kg",
+        ));
     }
 
     let new_event = NewEvent {
-        title: &payload.title,
-        description: payload.description.as_deref(),
-        due_date: payload.due_date,
-        guess_close_date: payload.guess_close_date,
+        title: &title,
+        description: description.as_deref(),
+        due_date: Some(due_date),
+        guess_close_date,
         event_key: &event_key,
         secret_key: &secret_key,
         min_weight_kg,
@@ -180,13 +245,13 @@ pub async fn create_event(
     let mut conn = state
         .pool
         .get()
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|_| api_error(StatusCode::INTERNAL_SERVER_ERROR, "DB connection failed"))?;
 
     let event = diesel::insert_into(events::table)
         .values(&new_event)
         .returning(Event::as_returning())
         .get_result(&mut conn)
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|_| api_error(StatusCode::INTERNAL_SERVER_ERROR, "Failed to create event"))?;
 
     // Construct response with explicit secret key
     let response = EventWithSecret { event, secret_key };
@@ -344,42 +409,45 @@ pub async fn submit_guess(
     State(state): State<AppState>,
     Path(event_id_param): Path<Uuid>,
     Json(payload): Json<SubmitGuessRequest>,
-) -> Result<Json<(Invitee, Guess)>, StatusCode> {
+) -> Result<Json<(Invitee, Guess)>, (StatusCode, Json<ApiError>)> {
     use crate::schema::{guesses, invitees};
 
     let ip = client_ip(&headers, peer);
     if !state.rate_limiter.allow(ip, 10.0 / 60.0, 5.0).await {
-        return Err(StatusCode::TOO_MANY_REQUESTS);
+        return Err(api_error(StatusCode::TOO_MANY_REQUESTS, "Rate limit exceeded"));
     }
 
     let mut conn = state
         .pool
         .get()
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|_| api_error(StatusCode::INTERNAL_SERVER_ERROR, "DB connection failed"))?;
 
     // Check if guesses are still allowed
     let event = events::table
         .find(event_id_param)
         .first::<Event>(&mut conn)
-        .map_err(|_| StatusCode::NOT_FOUND)?;
+        .map_err(|_| api_error(StatusCode::NOT_FOUND, "Event not found"))?;
 
     if event.ended_at.is_some() {
-        return Err(StatusCode::FORBIDDEN);
+        return Err(api_error(StatusCode::FORBIDDEN, "Event has ended"));
     }
 
     if !payload.guessed_weight_kg.is_finite()
         || payload.guessed_weight_kg < event.min_weight_kg
         || payload.guessed_weight_kg > event.max_weight_kg
     {
-        return Err(StatusCode::BAD_REQUEST);
+        return Err(api_error(StatusCode::BAD_REQUEST, "Invalid guessed_weight_kg"));
     }
 
     let now = chrono::Utc::now().naive_utc();
-    let close_date = event.guess_close_date.or(event.due_date);
+    let close_date = effective_guess_close_date(&event);
 
     if let Some(close) = close_date {
         if now > close {
-            return Err(StatusCode::FORBIDDEN);
+            return Err(api_error(
+                StatusCode::FORBIDDEN,
+                "Guessing is closed for this event",
+            ));
         }
     }
 
@@ -410,7 +478,7 @@ pub async fn submit_guess(
 
             Ok((invitee, guess))
         })
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|_| api_error(StatusCode::INTERNAL_SERVER_ERROR, "Failed to save guess"))?;
 
     // 2. Broadcast event
     let update = GuessUpdate {
@@ -466,7 +534,7 @@ pub async fn update_guess(
     }
 
     let now = chrono::Utc::now().naive_utc();
-    let close_date = event.guess_close_date.or(event.due_date);
+    let close_date = effective_guess_close_date(&event);
     if let Some(close) = close_date {
         if now > close {
             return Err(StatusCode::FORBIDDEN);

@@ -23,7 +23,9 @@
     "copy_link": "Kopioi linkki"
   },
   "event_header": {
-    "invite_key": "Kutsukoodi"
+    "invite_key": "Kutsukoodi",
+    "due_date": "Laskettu aika",
+    "guesses_until": "Arvaukset asti"
   },
   "guess_form": {
     "title": "Tee Arvaus 🎲",
@@ -37,6 +39,8 @@
     "alert_past_date": "Et voi veikata mennyttä päivämäärää! 🕰️",
     "alert_date_limit": "Päivämäärä ei voi olla yli kuukautta lasketun ajan jälkeen! 📅",
     "alert_submit_fail": "Arvauksen lähetys epäonnistui",
+    "guesses_closed_title": "Arvaukset ovat sulkeutuneet",
+    "guesses_closed_desc": "Tähän tapahtumaan ei voi enää lähettää arvauksia.",
     "already_guessed": "Olet jo arvannut! 🎉",
     "game_ended": "Peli on päättynyt. Kiitos pelaamisesta!"
   },

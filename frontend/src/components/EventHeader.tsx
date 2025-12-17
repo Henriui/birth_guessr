@@ -2,6 +2,7 @@ import { Chip, Container, Grid, IconButton, Paper, Typography } from '@mui/mater
 import type { EventData } from './types';
 import { useTranslation } from 'react-i18next';
 import { Edit as EditIcon } from '@mui/icons-material';
+import dayjs from 'dayjs';
 
 interface EventHeaderProps {
   event: EventData;
@@ -13,9 +14,15 @@ export function EventHeader({ event, isAdmin, onEditDescription }: EventHeaderPr
   const { t } = useTranslation();
 
   const shareUrl = `${window.location.origin}/share/${encodeURIComponent(event.event_key)}`;
+  const dueDateLabel = event.due_date ? dayjs(event.due_date).format('DD/MM/YYYY') : null;
+  const closeDateLabel = event.guess_close_date
+    ? dayjs(event.guess_close_date).format('DD/MM/YYYY')
+    : event.due_date
+      ? dayjs(event.due_date).endOf('day').format('DD/MM/YYYY')
+      : null;
 
   return (
-    <Paper sx={{ p: 3, mb: 4, borderRadius: 0 }}>
+    <Paper className="paper-reveal paper-reveal-1" sx={{ p: 3, mb: 4, borderRadius: 0 }}>
       <Container maxWidth="lg">
         <Grid container spacing={2} alignItems="center" justifyContent="space-between">
           <Grid item>
@@ -52,6 +59,16 @@ export function EventHeader({ event, isAdmin, onEditDescription }: EventHeaderPr
               variant="outlined"
               onClick={() => navigator.clipboard.writeText(shareUrl)}
             />
+            {dueDateLabel && (
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+                {t('event_header.due_date')}: {dueDateLabel}
+              </Typography>
+            )}
+            {closeDateLabel && (
+              <Typography variant="caption" color="text.secondary" display="block">
+                {t('event_header.guesses_until')}: {closeDateLabel}
+              </Typography>
+            )}
           </Grid>
         </Grid>
       </Container>
